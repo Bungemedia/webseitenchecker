@@ -2,11 +2,11 @@ import streamlit as st
 import pandas as pd
 import requests
 from bs4 import BeautifulSoup
-from st_aggrid import AgGrid, GridOptionsBuilder
+from st_aggrid import AgGrid, GridOptionsBuilder, JsCode
 
 st.set_page_config(page_title="Webseiten-Checker", page_icon="logo.png", layout="centered")
 
-# --- CLEAN DARK THEME & HEADLINE ZENTRIERUNG ---
+# --- DARK THEME & HEADLINE ZENTRIERUNG ---
 st.markdown("""
     <style>
     html, body, [data-testid="stAppViewContainer"] {
@@ -34,19 +34,40 @@ st.markdown("""
     .stButton > button:hover {
         background: linear-gradient(90deg, #223a5e 0%, #132c57 100%) !important;
     }
+    .logo-link {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-bottom: -8px;
+    }
+    .logo-link img {
+        width: 72px;
+        height: 72px;
+        border-radius: 12px;
+        box-shadow: 0 2px 10px #0002;
+        border: 2px solid #fff1;
+        transition: transform 0.18s;
+    }
+    .logo-link img:hover {
+        transform: scale(1.07) rotate(-3deg);
+        border-color: #33c88a;
+    }
     </style>
 """, unsafe_allow_html=True)
 
-# ---- OBEN: LOGO MIT HOMEPAGE-LINK UND HEADLINE ----
+# ---- LOGO + HEADLINE ----
 st.markdown(
     """
-    <div style='text-align:center; margin-bottom:0.7em;'>
+    <div class='logo-link'>
         <a href="https://bungemedia.de/" target="_blank">
-            <img src="logo.png" width="72" style="margin-bottom: -7px;" />
+            <img src="logo.png" alt="BungeMedia Logo">
         </a>
-        <h1 style='display:inline-block; vertical-align: middle; margin-left:0.3em; color:#fff; font-weight:800;'>Webseiten-Checker</h1>
     </div>
     """,
+    unsafe_allow_html=True
+)
+st.markdown(
+    "<h1 style='text-align:center; color:#fff; font-weight:800; margin-top:-4px;'>Webseiten-Checker</h1>",
     unsafe_allow_html=True
 )
 st.markdown(
@@ -134,16 +155,11 @@ def check_pagespeed(results, progress_bar):
                 data = response.json()
                 score = data['lighthouseResult']['categories']['performance']['score'] * 100
                 score = round(score, 1)
-                # Nur Seiten < 90% aufnehmen!
                 if score >= 90:
                     continue
 
-                # SEO-Checks
                 title, meta_desc = seo_scrape(url)
-
-                # Impressum/Datenschutz
                 impressum, datenschutz = check_legal(url)
-
                 category = categorize_score(score)
                 pagespeed_results.append({
                     "Position": position,
@@ -196,18 +212,20 @@ if go:
                     gb = GridOptionsBuilder.from_dataframe(df)
                     gb.configure_pagination(enabled=True)
                     gb.configure_default_column(groupable=False, editable=False, resizable=True)
-                    gb.configure_column(
-                        "Score",
-                        cellStyle=lambda params: {
-                            'color': 'white',
-                            'backgroundColor': (
-                                '#ff4d4d' if float(params.value) <= 49 else
-                                '#ffa64d' if float(params.value) <= 69 else
-                                '#ffff66' if float(params.value) <= 89 else
-                                '#66ff66'
-                            )
+                    score_color = JsCode("""
+                    function(params) {
+                        if (parseFloat(params.value) <= 49) {
+                            return {'color': 'white', 'backgroundColor': '#ff4d4d'};
+                        } else if (parseFloat(params.value) <= 69) {
+                            return {'color': 'black', 'backgroundColor': '#ffa64d'};
+                        } else if (parseFloat(params.value) <= 89) {
+                            return {'color': 'black', 'backgroundColor': '#ffff66'};
+                        } else {
+                            return {'color': 'black', 'backgroundColor': '#66ff66'};
                         }
-                    )
+                    }
+                    """)
+                    gb.configure_column("Score", cellStyle=score_color)
                     gridOptions = gb.build()
                     st.subheader("🔎 Detaillierte Ergebnisse")
                     AgGrid(
@@ -234,4 +252,3 @@ st.markdown("""
     <a href="https://bungemedia.de/datenschutzerklaerung/" style="color:#6af">Datenschutz</a>
 </div>
 """, unsafe_allow_html=True)
-
