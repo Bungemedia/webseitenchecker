@@ -2,23 +2,14 @@ import streamlit as st
 import pandas as pd
 import requests
 
-# --- ZENTRIERUNG, STYLE, DARK THEME ---
 st.set_page_config(page_title="Webseiten-Checker", page_icon="logo.png", layout="centered")
 
+# --- Style für den Dark Mode ---
 st.markdown("""
     <style>
     html, body, [data-testid="stAppViewContainer"] {
         background: #181a1e !important;
         color: #fff !important;
-        height: 100%;
-        min-height: 100vh;
-    }
-    .main-center {
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        min-height: 92vh;
     }
     .stTextInput>div>div>input {
         background: #222 !important;
@@ -41,39 +32,23 @@ st.markdown("""
     .stButton > button:hover {
         background: linear-gradient(90deg, #223a5e 0%, #132c57 100%) !important;
     }
-    label[for^="text_input"] {
-        color: #fff !important;
-        font-weight: 500;
-        font-size: 1.05em;
-        letter-spacing: 0.5px;
-    }
-    .center-headline {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-    }
     </style>
 """, unsafe_allow_html=True)
 
-# --- ALLES IN ZENTRIERTEM DIV ---
-st.markdown('<div class="main-center">', unsafe_allow_html=True)
+# --- Header: Logo und Titel in einer Zeile (columns!) ---
+col1, col2 = st.columns([1, 8])
+with col1:
+    st.image("logo.png", width=60)
+with col2:
+    st.markdown("<h1 style='margin-bottom:0.2em; color:#fff;'>Webseiten-Checker</h1>", unsafe_allow_html=True)
 
-# --- HEADER: Logo & Headline ---
-st.markdown('<div class="center-headline">', unsafe_allow_html=True)
-st.image("logo.png", width=80)
-st.markdown("<h1 style='margin-bottom:0.4em; color:#fff;'>Webseiten-Checker</h1>", unsafe_allow_html=True)
-st.markdown('</div>', unsafe_allow_html=True)
-
-# --- SUBTITLE ---
 st.markdown("<div style='text-align:center; margin-bottom:1.5em; color:#fff;'>Finde Webseiten, die Optimierung brauchen!</div>", unsafe_allow_html=True)
 
-# --- EINGABE ---
+# --- Eingabe-Feld und Button ---
 keyword = st.text_input("Keyword eingeben", "")
 go = st.button("Scan starten")
 
-st.markdown('</div>', unsafe_allow_html=True)  # Zentrier-Container schließen
-
-# --- FUNKTIONEN ---
+# --- Funktionen wie gehabt ---
 SERPAPI_KEY = "833c2605f2e281d47aec475bec3ad361c317c722bf2104726a0ef6881dc2642c"
 GOOGLE_API_KEY = "AIzaSyDbjJJZnl2kcZhWvz7V-80bQhgEodm6GZU"
 
@@ -148,7 +123,7 @@ def highlight_score(val):
     else:
         return 'background-color: #66ff66; color: black;'
 
-# --- ERGEBNISSE (NACH BUTTON CLICK) ---
+# --- Ergebnisse anzeigen ---
 if go:
     if not keyword:
         st.warning("Bitte gib ein Keyword ein.")
