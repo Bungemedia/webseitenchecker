@@ -11,30 +11,6 @@ st.markdown("""
         background: #fff !important;
         color: #232323 !important;
     }
-    .header-flex {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 20px;
-        margin-top: 48px;
-        margin-bottom: 0.5em;
-    }
-    .header-flex img {
-        width: 56px;
-        height: 56px;
-        border-radius: 10px;
-        background: #fff;
-        box-shadow: 0 1px 4px #0001;
-        object-fit: contain;
-        margin-bottom: 0;
-    }
-    .header-flex h1 {
-        font-size: 2.3rem;
-        font-weight: 800;
-        margin: 0;
-        color: #232323;
-        letter-spacing: -1px;
-    }
     .app-subtitle {
         text-align: center;
         margin-bottom: 2em;
@@ -67,16 +43,16 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# ---- HEADER: LOGO + H1 auf einer Linie ----
-st.markdown('''
-    <div class="header-flex">
-        <img src="logo.png" alt="Logo"/>
-        <h1>Webseiten-Checker</h1>
-    </div>
-''', unsafe_allow_html=True)
+# --- LOGO + TITEL nebeneinander mit columns ---
+col1, col2 = st.columns([1, 5])
+with col1:
+    st.image("logo.png", width=56)
+with col2:
+    st.markdown("<h1 style='margin-top: 18px; font-size:2.3rem; font-weight:800; letter-spacing:-1px;'>Webseiten-Checker</h1>", unsafe_allow_html=True)
+
 st.markdown("<div class='app-subtitle'>Finde Webseiten, die Optimierung brauchen!</div>", unsafe_allow_html=True)
 
-# ---- Streamlit-Widgets IMMER "außerhalb" eigener Divs aufrufen! ----
+# ---- Streamlit-Widgets
 keyword = st.text_input("Keyword eingeben", "")
 go = st.button("Scan starten")
 
