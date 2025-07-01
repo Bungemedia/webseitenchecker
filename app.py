@@ -51,13 +51,6 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-# ---- INPUT & BUTTON ----
-keyword = st.text_input("Keyword eingeben", "")
-go = st.button("Scan starten")
-
-# --- FUNKTIONEN (wie gehabt, darunter) ---
-# ... Rest deines Codes wie gehabt ...
-
 # --- Eingabe-Feld und Button ---
 keyword = st.text_input("Keyword eingeben", "")
 go = st.button("Scan starten")
