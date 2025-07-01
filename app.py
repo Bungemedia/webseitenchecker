@@ -36,8 +36,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ---- OBEN: LOGO UND HEADLINE ----
-st.markdown(
-    st.image("logo.png", width=72)
+st.image("logo.png", width=72)
 st.markdown(
     "<h1 style='text-align:center; color:#fff; font-weight:800; margin-top:-10px;'>Webseiten-Checker</h1>",
     unsafe_allow_html=True
