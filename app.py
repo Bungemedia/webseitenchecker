@@ -2,58 +2,52 @@ import streamlit as st
 import pandas as pd
 import requests
 
-# ---- PAGE/STYLE ----
-st.set_page_config(
-    page_title="Webseiten-Checker",
-    page_icon="logo.png",
-    layout="centered",
-    initial_sidebar_state="auto"
-)
+st.set_page_config(page_title="Webseiten-Checker", page_icon="logo.png", layout="centered")
 
-# --- ERZWINGE LIGHT-THEME + HELLER FARBVERLAUF ---
+# --- Style: Button und Farben ---
 st.markdown("""
     <style>
     html, body, [data-testid="stAppViewContainer"] {
-        background: linear-gradient(120deg, #ff7100 0%, #33c88a 100%) !important;
-        color: #222 !important;
-    }
-    .main .block-container {
-        background: rgba(255,255,255,0.94);
-        border-radius: 24px;
-        margin: 3vw auto 2vw auto;
-        padding: 2.5em 3em;
-        box-shadow: 0 6px 32px #0002;
-        max-width: 1140px;
+        background: #fff !important;
+        color: #232323 !important;
     }
     .header-flex {
         display: flex;
         align-items: center;
         justify-content: center;
-        gap: 24px;
-        margin-bottom: 1.5em;
-        flex-wrap: wrap;
+        gap: 20px;
+        margin-top: 48px;
+        margin-bottom: 0.5em;
     }
     .header-flex img {
-        max-width: 70px;
-        height: auto;
+        width: 56px;
+        height: 56px;
+        border-radius: 10px;
+        background: #fff;
+        box-shadow: 0 1px 4px #0001;
+        object-fit: contain;
         margin-bottom: 0;
-        box-shadow: 0 2px 10px #0001;
-        border-radius: 8px;
     }
     .header-flex h1 {
-        font-size: 2.4rem;
-        font-weight: 700;
+        font-size: 2.3rem;
+        font-weight: 800;
         margin: 0;
-        color: #222;
+        color: #232323;
         letter-spacing: -1px;
     }
-    .input-card {
-        background: #fafbfc;
-        border-radius: 20px;
-        box-shadow: 0 2px 14px #0001;
-        padding: 2em;
-        max-width: 500px;
-        margin: auto;
+    .app-subtitle {
+        text-align: center;
+        margin-bottom: 2em;
+        color: #232323;
+        font-weight: 500;
+        font-size: 1.10rem;
+    }
+    .stTextInput>div>div>input {
+        background: #fff !important;
+        color: #232323 !important;
+        border-radius: 12px !important;
+        padding: 0.6em 1em !important;
+        border: 1px solid #e7e7e7 !important;
     }
     .stButton > button {
         background: linear-gradient(90deg, #132c57 0%, #223a5e 100%) !important;
@@ -63,6 +57,7 @@ st.markdown("""
         border: none;
         padding: 0.7em 2em;
         margin-bottom: 1em;
+        margin-top: 1em;
         box-shadow: 0 2px 12px #132c5730;
         transition: background 0.3s;
     }
@@ -79,16 +74,11 @@ st.markdown('''
         <h1>Webseiten-Checker</h1>
     </div>
 ''', unsafe_allow_html=True)
+st.markdown("<div class='app-subtitle'>Finde Webseiten, die Optimierung brauchen!</div>", unsafe_allow_html=True)
 
-st.markdown("<div style='text-align:center; margin-bottom:1.5em;'>Finde Webseiten, die Optimierung brauchen!</div>", unsafe_allow_html=True)
-
-# ---- EINGABE ALS CARD ----
-st.markdown('<div class="input-card">', unsafe_allow_html=True)
+# ---- Streamlit-Widgets IMMER "außerhalb" eigener Divs aufrufen! ----
 keyword = st.text_input("Keyword eingeben", "")
 go = st.button("Scan starten")
-st.markdown('</div>', unsafe_allow_html=True)
-
-# ---- FUNKTIONEN ----
 
 SERPAPI_KEY = "833c2605f2e281d47aec475bec3ad361c317c722bf2104726a0ef6881dc2642c"
 GOOGLE_API_KEY = "AIzaSyDbjJJZnl2kcZhWvz7V-80bQhgEodm6GZU"
@@ -164,8 +154,7 @@ def highlight_score(val):
     else:
         return 'background-color: #66ff66; color: black;'
 
-# ---- APP LOGIK ----
-
+# --- Ergebnisse ---
 if go:
     if not keyword:
         st.warning("Bitte gib ein Keyword ein.")
@@ -175,7 +164,6 @@ if go:
             if results:
                 progress_bar = st.progress(0, text="Seiten werden geprüft…")
                 pagespeed_results = check_pagespeed(results, progress_bar)
-                
                 if pagespeed_results:
                     df = pd.DataFrame(pagespeed_results).sort_values(by="Position")
                     styled_df = df.style.applymap(highlight_score, subset=["Score"])
