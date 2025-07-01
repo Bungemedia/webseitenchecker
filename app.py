@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import requests
+import os
 
 # ---- PAGE/STYLE ----
 st.set_page_config(
@@ -10,50 +11,65 @@ st.set_page_config(
     initial_sidebar_state="auto"
 )
 
-# --- ERZWINGE LIGHT-THEME + HELLER FARBVERLAUF ---
+# CSS für kompaktes, modernes Card-Layout & Light Theme
 st.markdown("""
     <style>
     html, body, [data-testid="stAppViewContainer"] {
         background: linear-gradient(120deg, #ff7100 0%, #33c88a 100%) !important;
-        color: #222 !important;
+        color: #232323 !important;
     }
-    .main .block-container {
-        background: rgba(255,255,255,0.94);
-        border-radius: 24px;
-        margin: 3vw auto 2vw auto;
-        padding: 2.5em 3em;
-        box-shadow: 0 6px 32px #0002;
-        max-width: 1140px;
+    .page-center-card {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 97vh;
+    }
+    .center-card {
+        background: rgba(255,255,255,0.97);
+        border-radius: 30px;
+        box-shadow: 0 10px 42px #0002;
+        padding: 2.5rem 2.7rem 2rem 2.7rem;
+        min-width: 340px;
+        max-width: 430px;
+        width: 100%;
+        margin-top: 2rem;
     }
     .header-flex {
         display: flex;
         align-items: center;
         justify-content: center;
-        gap: 24px;
-        margin-bottom: 1.5em;
-        flex-wrap: wrap;
+        gap: 20px;
+        margin-bottom: 0.7em;
     }
     .header-flex img {
-        max-width: 70px;
-        height: auto;
+        max-width: 54px;
+        height: 54px;
         margin-bottom: 0;
-        box-shadow: 0 2px 10px #0001;
         border-radius: 8px;
+        box-shadow: 0 2px 10px #0001;
+        background: #fff;
+        object-fit: contain;
+        display: inline-block;
     }
     .header-flex h1 {
-        font-size: 2.4rem;
+        font-size: 2.1rem;
         font-weight: 700;
         margin: 0;
-        color: #222;
+        color: #232323;
         letter-spacing: -1px;
     }
-    .input-card {
-        background: #fafbfc;
-        border-radius: 20px;
-        box-shadow: 0 2px 14px #0001;
-        padding: 2em;
-        max-width: 500px;
-        margin: auto;
+    .app-subtitle {
+        text-align: center;
+        margin-bottom: 1.8em;
+        color: #232323;
+        font-weight: 500;
+    }
+    .stTextInput>div>div>input {
+        background: #fff !important;
+        color: #222 !important;
+        border-radius: 12px !important;
+        padding: 0.6em 1em !important;
+        border: 1px solid #eee !important;
     }
     .stButton > button {
         background: linear-gradient(90deg, #132c57 0%, #223a5e 100%) !important;
@@ -72,24 +88,32 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# ---- HEADER: LOGO + H1 auf einer Linie ----
-st.markdown('''
+# ---- HEADER: LOGO + H1 zentriert auf einer Linie ----
+st.markdown("""
+<div class="page-center-card">
+  <div class="center-card">
     <div class="header-flex">
-        <img src="logo.png" alt="Logo"/>
-        <h1>Webseiten-Checker</h1>
+""", unsafe_allow_html=True)
+
+# Logo anzeigen (Streamlit garantiert Bildanzeige, onerror ist im Browser nicht nutzbar!)
+try:
+    st.image("logo.png", width=54)
+except Exception:
+    st.write("🖼️ [Logo nicht gefunden]")
+
+st.markdown("""
+      <h1>Webseiten-Checker</h1>
     </div>
-''', unsafe_allow_html=True)
+    <div class="app-subtitle">Finde Webseiten, die Optimierung brauchen!</div>
+""", unsafe_allow_html=True)
 
-st.markdown("<div style='text-align:center; margin-bottom:1.5em;'>Finde Webseiten, die Optimierung brauchen!</div>", unsafe_allow_html=True)
-
-# ---- EINGABE ALS CARD ----
-st.markdown('<div class="input-card">', unsafe_allow_html=True)
+# ---- INPUT UND BUTTON ----
 keyword = st.text_input("Keyword eingeben", "")
 go = st.button("Scan starten")
-st.markdown('</div>', unsafe_allow_html=True)
+
+st.markdown("</div></div>", unsafe_allow_html=True)  # Card-Wrapper zu
 
 # ---- FUNKTIONEN ----
-
 SERPAPI_KEY = "833c2605f2e281d47aec475bec3ad361c317c722bf2104726a0ef6881dc2642c"
 GOOGLE_API_KEY = "AIzaSyDbjJJZnl2kcZhWvz7V-80bQhgEodm6GZU"
 
@@ -165,7 +189,6 @@ def highlight_score(val):
         return 'background-color: #66ff66; color: black;'
 
 # ---- APP LOGIK ----
-
 if go:
     if not keyword:
         st.warning("Bitte gib ein Keyword ein.")
@@ -175,7 +198,6 @@ if go:
             if results:
                 progress_bar = st.progress(0, text="Seiten werden geprüft…")
                 pagespeed_results = check_pagespeed(results, progress_bar)
-                
                 if pagespeed_results:
                     df = pd.DataFrame(pagespeed_results).sort_values(by="Position")
                     styled_df = df.style.applymap(highlight_score, subset=["Score"])
@@ -186,3 +208,4 @@ if go:
                     st.info("Keine Webseiten mit ausreichender Bewertung gefunden.")
             else:
                 st.info("Keine Ergebnisse für das Keyword gefunden.")
+
