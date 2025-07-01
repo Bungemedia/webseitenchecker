@@ -83,22 +83,21 @@ def highlight_score(val):
 st.set_page_config(page_title="Webseiten-Checker", page_icon="logo.png")
 
 # Style für Hintergrund & Layout
-st.markdown(
-    """
+st.markdown("""
     <style>
     body {
-        background-color: white;
+        background: linear-gradient(120deg, #ff7100 0%, #33c88a 100%) !important;
     }
     .main .block-container {
+        background: rgba(255,255,255,0.85);
+        border-radius: 24px;
+        margin: 3vw auto 2vw auto;
+        padding: 2.5em 3em;
+        box-shadow: 0 6px 32px #0002;
         max-width: 1140px;
-        margin-left: auto;
-        margin-right: auto;
-        padding-left: 2rem;
-        padding-right: 2rem;
     }
     </style>
-    """,
-    unsafe_allow_html=True
+""", unsafe_allow_html=True)
 )
 
 # Titel der App
