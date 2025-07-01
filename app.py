@@ -28,13 +28,19 @@ st.markdown("""
         margin: auto;
     }
     .stButton > button {
-        background: linear-gradient(90deg, #ff7100, #33c88a);
-        color: white !important;
-        font-weight: bold;
-        border-radius: 14px;
-        border: none;
-        padding: 0.7em 2em;
-        margin-bottom: 1em;
+    background: linear-gradient(90deg, #132c57 0%, #223a5e 100%) !important;
+    color: white !important;
+    font-weight: bold;
+    border-radius: 14px;
+    border: none;
+    padding: 0.7em 2em;
+    margin-bottom: 1em;
+    box-shadow: 0 2px 12px #132c5730;
+    transition: background 0.3s;
+}
+.stButton > button:hover {
+    background: linear-gradient(90deg, #223a5e 0%, #132c57 100%) !important;
+}
     }
     </style>
 """, unsafe_allow_html=True)
