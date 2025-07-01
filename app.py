@@ -2,14 +2,10 @@ import streamlit as st
 import pandas as pd
 import requests
 
-# --- Seite konfigurieren (weißer Hintergrund) ---
-st.set_page_config(
-    page_title="Webseiten-Checker",
-    page_icon="logo.png",
-    layout="centered"
-)
+# Seite konfigurieren
+st.set_page_config(page_title="Webseiten-Checker", page_icon="logo.png", layout="centered")
 
-# --- Style ---
+# CSS nur einmal
 st.markdown("""
 <style>
 body, [data-testid="stAppViewContainer"], html {
@@ -88,7 +84,7 @@ body, [data-testid="stAppViewContainer"], html {
 </style>
 """, unsafe_allow_html=True)
 
-# --- CARD LAYOUT ---
+# --- CARD-ONLY UI ---
 st.markdown('<div class="page-center-card"><div class="center-card">', unsafe_allow_html=True)
 st.markdown('<div class="header-flex">', unsafe_allow_html=True)
 st.image("logo.png", width=48)
@@ -99,7 +95,7 @@ keyword = st.text_input("Keyword eingeben", "")
 go = st.button("Scan starten")
 st.markdown('</div></div>', unsafe_allow_html=True)  # Card zu
 
-# -------- FUNKTIONEN & LOGIK --------
+# ----------- FUNKTIONEN & LOGIK -----------
 SERPAPI_KEY = "833c2605f2e281d47aec475bec3ad361c317c722bf2104726a0ef6881dc2642c"
 GOOGLE_API_KEY = "AIzaSyDbjJJZnl2kcZhWvz7V-80bQhgEodm6GZU"
 
@@ -174,7 +170,7 @@ def highlight_score(val):
     else:
         return 'background-color: #66ff66; color: black;'
 
-# -------- App-Logik (Ergebnisse nach der Card) --------
+# --- Ergebnisse nach Card ---
 if go:
     if not keyword:
         st.warning("Bitte gib ein Keyword ein.")
