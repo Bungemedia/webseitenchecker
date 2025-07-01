@@ -2,11 +2,18 @@ import streamlit as st
 import pandas as pd
 import requests
 from bs4 import BeautifulSoup
-from st_aggrid import AgGrid, GridOptionsBuilder, JsCode
+from st_aggrid import AgGrid, GridOptionsBuilder
+import base64
 
 st.set_page_config(page_title="Webseiten-Checker", page_icon="logo.png", layout="centered")
 
-# --- DARK THEME & HEADLINE ZENTRIERUNG ---
+# ---- BASE64 LOGO (PLATZHALTER) ----
+# Ersetze den String durch deinen echten Base64-String!
+logo_base64 = (
+    "iVBORw0KGgoAAAANSUhEUgAAAGQAAAAyCAYAAADHDwA..."  # <- Hier kommt dein ganzer Base64-String rein!
+)
+
+# ---- DARK THEME & HEADLINE ZENTRIERUNG ----
 st.markdown("""
     <style>
     html, body, [data-testid="stAppViewContainer"] {
@@ -34,42 +41,22 @@ st.markdown("""
     .stButton > button:hover {
         background: linear-gradient(90deg, #223a5e 0%, #132c57 100%) !important;
     }
-    .logo-link {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        margin-bottom: -8px;
-    }
-    .logo-link img {
-        width: 72px;
-        height: 72px;
-        border-radius: 12px;
-        box-shadow: 0 2px 10px #0002;
-        border: 2px solid #fff1;
-        transition: transform 0.18s;
-    }
-    .logo-link img:hover {
-        transform: scale(1.07) rotate(-3deg);
-        border-color: #33c88a;
-    }
     </style>
 """, unsafe_allow_html=True)
 
-# ---- LOGO + HEADLINE ----
+# ---- OBEN: LOGO UND HEADLINE ----
 st.markdown(
-    """
-    <div class='logo-link'>
+    f"""
+    <div style='text-align:center; margin-bottom:0.7em;'>
         <a href="https://bungemedia.de/" target="_blank">
-            <img src="logo.png" alt="BungeMedia Logo">
+            <img src="data:image/png;base64,{logo_base64}" width="72" style="margin-bottom: -7px; border-radius: 10px; box-shadow:0 2px 8px #0004;">
         </a>
+        <h1 style='color:#fff; font-weight:800; margin-top:0.7em; margin-bottom:0;'>Webseiten-Checker</h1>
     </div>
     """,
     unsafe_allow_html=True
 )
-st.markdown(
-    "<h1 style='text-align:center; color:#fff; font-weight:800; margin-top:-4px;'>Webseiten-Checker</h1>",
-    unsafe_allow_html=True
-)
+
 st.markdown(
     "<div style='text-align:center; margin-bottom:2.2em; color:#fff;'>Finde Webseiten, die Optimierung brauchen!</div>",
     unsafe_allow_html=True
@@ -157,7 +144,6 @@ def check_pagespeed(results, progress_bar):
                 score = round(score, 1)
                 if score >= 90:
                     continue
-
                 title, meta_desc = seo_scrape(url)
                 impressum, datenschutz = check_legal(url)
                 category = categorize_score(score)
@@ -176,7 +162,6 @@ def check_pagespeed(results, progress_bar):
                 st.warning(f"Fehler bei {url}: Statuscode {response.status_code}")
         except Exception as e:
             st.warning(f"Fehler bei {url}: {e}")
-
         progress_percent = int(((idx + 1) / total) * 100)
         progress_bar.progress(progress_percent, text=f"Prüfe Seiten… ({progress_percent}%)")
     progress_bar.empty()
@@ -206,26 +191,22 @@ if go:
                 pagespeed_results = check_pagespeed(results, progress_bar)
                 if pagespeed_results:
                     df = pd.DataFrame(pagespeed_results).sort_values(by="Position")
-                    df = df.reset_index(drop=True)  # entfernt die zusätzliche Index-Spalte
-
-                    # --- AgGrid-Konfiguration ---
+                    df = df.reset_index(drop=True)
                     gb = GridOptionsBuilder.from_dataframe(df)
                     gb.configure_pagination(enabled=True)
                     gb.configure_default_column(groupable=False, editable=False, resizable=True)
-                    score_color = JsCode("""
-                    function(params) {
-                        if (parseFloat(params.value) <= 49) {
-                            return {'color': 'white', 'backgroundColor': '#ff4d4d'};
-                        } else if (parseFloat(params.value) <= 69) {
-                            return {'color': 'black', 'backgroundColor': '#ffa64d'};
-                        } else if (parseFloat(params.value) <= 89) {
-                            return {'color': 'black', 'backgroundColor': '#ffff66'};
-                        } else {
-                            return {'color': 'black', 'backgroundColor': '#66ff66'};
+                    gb.configure_column(
+                        "Score",
+                        cellStyle=lambda params: {
+                            'color': 'white',
+                            'backgroundColor': (
+                                '#ff4d4d' if float(params.value) <= 49 else
+                                '#ffa64d' if float(params.value) <= 69 else
+                                '#ffff66' if float(params.value) <= 89 else
+                                '#66ff66'
+                            )
                         }
-                    }
-                    """)
-                    gb.configure_column("Score", cellStyle=score_color)
+                    )
                     gridOptions = gb.build()
                     st.subheader("🔎 Detaillierte Ergebnisse")
                     AgGrid(
