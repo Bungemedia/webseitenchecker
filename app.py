@@ -2,16 +2,23 @@ import streamlit as st
 import pandas as pd
 import requests
 
-# ---- DESIGN ----
-st.set_page_config(page_title="Webseiten-Checker", page_icon="logo.png")
+# ---- PAGE/STYLE ----
+st.set_page_config(
+    page_title="Webseiten-Checker",
+    page_icon="logo.png",
+    layout="centered",
+    initial_sidebar_state="auto"
+)
 
+# --- ERZWINGE LIGHT-THEME + HELLER FARBVERLAUF ---
 st.markdown("""
     <style>
-    body {
+    html, body, [data-testid="stAppViewContainer"] {
         background: linear-gradient(120deg, #ff7100 0%, #33c88a 100%) !important;
+        color: #222 !important;
     }
     .main .block-container {
-        background: rgba(255,255,255,0.92);
+        background: rgba(255,255,255,0.94);
         border-radius: 24px;
         margin: 3vw auto 2vw auto;
         padding: 2.5em 3em;
@@ -30,6 +37,8 @@ st.markdown("""
         max-width: 70px;
         height: auto;
         margin-bottom: 0;
+        box-shadow: 0 2px 10px #0001;
+        border-radius: 8px;
     }
     .header-flex h1 {
         font-size: 2.4rem;
