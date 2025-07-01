@@ -20,13 +20,11 @@ st.markdown("""
         background: transparent !important;
         padding-top: 56px !important;
     }
-    /* HEADER: Logo + H1 */
-    .header-flex {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 24px;
-        margin-bottom: 0.7em;
+    col1, col2 = st.columns([1, 6])
+with col1:
+    st.image("logo.png", width=60)
+with col2:
+    st.markdown("<h1 style='margin-bottom:0.2em;'>Webseiten-Checker</h1>", unsafe_allow_html=True)
     }
     .header-flex img {
         width: 56px;
