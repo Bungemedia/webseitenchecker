@@ -2,64 +2,58 @@ import streamlit as st
 import pandas as pd
 import requests
 
-st.set_page_config(page_title="Webseiten-Checker", page_icon="logo.png", layout="centered")
+# ---- PAGE/STYLE ----
+st.set_page_config(
+    page_title="Webseiten-Checker",
+    page_icon="logo.png",
+    layout="centered",
+    initial_sidebar_state="auto"
+)
 
-# --- Style nur fürs Card-Design und Button ---
+# --- ERZWINGE LIGHT-THEME + HELLER FARBVERLAUF ---
 st.markdown("""
     <style>
-    body, [data-testid="stAppViewContainer"], html {
-        background: #fff !important;
-        color: #232323 !important;
+    html, body, [data-testid="stAppViewContainer"] {
+        background: linear-gradient(120deg, #ff7100 0%, #33c88a 100%) !important;
+        color: #222 !important;
     }
-    .center-card {
-        background: #fff;
+    .main .block-container {
+        background: rgba(255,255,255,0.94);
         border-radius: 24px;
-        box-shadow: 0 8px 32px #0001;
-        padding: 2.4rem 2.1rem 2rem 2.1rem;
-        min-width: 320px;
-        max-width: 430px;
-        width: 100%;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        margin: 64px auto 48px auto;
+        margin: 3vw auto 2vw auto;
+        padding: 2.5em 3em;
+        box-shadow: 0 6px 32px #0002;
+        max-width: 1140px;
     }
     .header-flex {
         display: flex;
         align-items: center;
         justify-content: center;
-        gap: 16px;
-        margin-bottom: 0.8em;
+        gap: 24px;
+        margin-bottom: 1.5em;
+        flex-wrap: wrap;
     }
     .header-flex img {
-        width: 48px;
-        height: 48px;
-        border-radius: 8px;
-        object-fit: contain;
+        max-width: 70px;
+        height: auto;
         margin-bottom: 0;
-        background: #fff;
-        box-shadow: 0 1px 4px #0001;
+        box-shadow: 0 2px 10px #0001;
+        border-radius: 8px;
     }
     .header-flex h1 {
-        font-size: 2rem;
-        font-weight: 800;
+        font-size: 2.4rem;
+        font-weight: 700;
         margin: 0;
-        color: #232323;
+        color: #222;
         letter-spacing: -1px;
     }
-    .app-subtitle {
-        text-align: center;
-        margin-bottom: 1.3em;
-        color: #232323;
-        font-weight: 500;
-        font-size: 1.08rem;
-    }
-    .stTextInput>div>div>input {
-        background: #fff !important;
-        color: #222 !important;
-        border-radius: 12px !important;
-        padding: 0.6em 1em !important;
-        border: 1px solid #e7e7e7 !important;
+    .input-card {
+        background: #fafbfc;
+        border-radius: 20px;
+        box-shadow: 0 2px 14px #0001;
+        padding: 2em;
+        max-width: 500px;
+        margin: auto;
     }
     .stButton > button {
         background: linear-gradient(90deg, #132c57 0%, #223a5e 100%) !important;
@@ -78,18 +72,24 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# --------- ALLES IM CONTAINER! ---------
-with st.container():
-    st.markdown('<div class="center-card">', unsafe_allow_html=True)
-    st.markdown('<div class="header-flex">', unsafe_allow_html=True)
-    st.image("logo.png", width=48)
-    st.markdown('<h1>Webseiten-Checker</h1></div>', unsafe_allow_html=True)
-    st.markdown('<div class="app-subtitle">Finde Webseiten, die Optimierung brauchen!</div>', unsafe_allow_html=True)
-    keyword = st.text_input("Keyword eingeben", "")
-    go = st.button("Scan starten")
-    st.markdown('</div>', unsafe_allow_html=True)  # Schließt .center-card
+# ---- HEADER: LOGO + H1 auf einer Linie ----
+st.markdown('''
+    <div class="header-flex">
+        <img src="logo.png" alt="Logo"/>
+        <h1>Webseiten-Checker</h1>
+    </div>
+''', unsafe_allow_html=True)
 
-# --- Ergebnisse nach Card anzeigen (NACH Container!) ---
+st.markdown("<div style='text-align:center; margin-bottom:1.5em;'>Finde Webseiten, die Optimierung brauchen!</div>", unsafe_allow_html=True)
+
+# ---- EINGABE ALS CARD ----
+st.markdown('<div class="input-card">', unsafe_allow_html=True)
+keyword = st.text_input("Keyword eingeben", "")
+go = st.button("Scan starten")
+st.markdown('</div>', unsafe_allow_html=True)
+
+# ---- FUNKTIONEN ----
+
 SERPAPI_KEY = "833c2605f2e281d47aec475bec3ad361c317c722bf2104726a0ef6881dc2642c"
 GOOGLE_API_KEY = "AIzaSyDbjJJZnl2kcZhWvz7V-80bQhgEodm6GZU"
 
@@ -164,6 +164,8 @@ def highlight_score(val):
     else:
         return 'background-color: #66ff66; color: black;'
 
+# ---- APP LOGIK ----
+
 if go:
     if not keyword:
         st.warning("Bitte gib ein Keyword ein.")
@@ -173,6 +175,7 @@ if go:
             if results:
                 progress_bar = st.progress(0, text="Seiten werden geprüft…")
                 pagespeed_results = check_pagespeed(results, progress_bar)
+                
                 if pagespeed_results:
                     df = pd.DataFrame(pagespeed_results).sort_values(by="Position")
                     styled_df = df.style.applymap(highlight_score, subset=["Score"])
