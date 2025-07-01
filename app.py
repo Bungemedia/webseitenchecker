@@ -37,10 +37,16 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# ---- OBEN: LOGO UND HEADLINE ----
-st.image("logo.png", width=72)
+# ---- OBEN: LOGO MIT HOMEPAGE-LINK UND HEADLINE ----
 st.markdown(
-    "<h1 style='text-align:center; color:#fff; font-weight:800; margin-top:-10px;'>Webseiten-Checker</h1>",
+    """
+    <div style='text-align:center; margin-bottom:0.7em;'>
+        <a href="https://bungemedia.de/" target="_blank">
+            <img src="logo.png" width="72" style="margin-bottom: -7px;" />
+        </a>
+        <h1 style='display:inline-block; vertical-align: middle; margin-left:0.3em; color:#fff; font-weight:800;'>Webseiten-Checker</h1>
+    </div>
+    """,
     unsafe_allow_html=True
 )
 st.markdown(
@@ -121,7 +127,6 @@ def check_pagespeed(results, progress_bar):
     pagespeed_results = []
     total = len(results)
     for idx, (url, position) in enumerate(results):
-        # Prüfen, ob Domain erreichbar ist
         api_url = f"https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url={url}&strategy=mobile&key={GOOGLE_API_KEY}"
         try:
             response = requests.get(api_url, headers=headers)
@@ -223,9 +228,10 @@ if go:
 st.markdown("---")
 st.markdown("""
 <div style='text-align:center; color: #bbb; font-size: 0.95em;'>
-    <b>Webseiten-Checker</b> | Ein Projekt von MB Media<br>
-    Kontakt: <a href="mailto:info@deineagentur.de" style="color:#6af">info@deineagentur.de</a> <br>
-    <a href="https://deineagentur.de/impressum" style="color:#6af">Impressum</a> | 
-    <a href="https://deineagentur.de/datenschutz" style="color:#6af">Datenschutz</a>
+    <b>Webseiten-Checker</b> | Ein Projekt von BungeMedia<br>
+    Kontakt: <a href="mailto:info@bungemedia.de" style="color:#6af">info@bungemedia.de</a> <br>
+    <a href="https://bungemedia.de/impressum/" style="color:#6af">Impressum</a> | 
+    <a href="https://bungemedia.de/datenschutzerklaerung/" style="color:#6af">Datenschutz</a>
 </div>
 """, unsafe_allow_html=True)
+
