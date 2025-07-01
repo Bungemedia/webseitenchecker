@@ -56,21 +56,6 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# --- LOGO + TITEL nebeneinander mit columns ---
-with st.container():
-    st.markdown('<div class="main-card">', unsafe_allow_html=True)
-    col1, col2 = st.columns([1, 5])
-    with col1:
-        st.image("logo.png", width=56)
-    with col2:
-        st.markdown(
-            "<h1 style='margin-top: 18px; font-size:2.3rem; font-weight:800; letter-spacing:-1px; color:#e9ecef;'>Webseiten-Checker</h1>",
-            unsafe_allow_html=True)
-    st.markdown("<div class='app-subtitle'>Finde Webseiten, die Optimierung brauchen!</div>", unsafe_allow_html=True)
-    keyword = st.text_input("Keyword eingeben", "")
-    go = st.button("Scan starten")
-    st.markdown('</div>', unsafe_allow_html=True)
-
 SERPAPI_KEY = "833c2605f2e281d47aec475bec3ad361c317c722bf2104726a0ef6881dc2642c"
 GOOGLE_API_KEY = "AIzaSyDbjJJZnl2kcZhWvz7V-80bQhgEodm6GZU"
 
@@ -145,22 +130,39 @@ def highlight_score(val):
     else:
         return 'background-color: #2ecc71; color: black;'
 
-if go:
-    if not keyword:
-        st.warning("Bitte gib ein Keyword ein.")
-    else:
-        with st.spinner("Suche läuft..."):
-            results = run_search(keyword)
-            if results:
-                progress_bar = st.progress(0, text="Seiten werden geprüft…")
-                pagespeed_results = check_pagespeed(results, progress_bar)
-                if pagespeed_results:
-                    df = pd.DataFrame(pagespeed_results).sort_values(by="Position")
-                    styled_df = df.style.applymap(highlight_score, subset=["Score"])
-                    st.subheader("🔎 Detaillierte Ergebnisse")
-                    st.dataframe(styled_df)
-                    st.success("Analyse abgeschlossen!")
+# ---------- ALLES im Haupt-CARD-Container ----------
+with st.container():
+    st.markdown('<div class="main-card">', unsafe_allow_html=True)
+    # Kopfbereich: Logo + Titel
+    col1, col2 = st.columns([1, 5])
+    with col1:
+        st.image("logo.png", width=56)
+    with col2:
+        st.markdown(
+            "<h1 style='margin-top: 18px; font-size:2.3rem; font-weight:800; letter-spacing:-1px; color:#e9ecef;'>Webseiten-Checker</h1>",
+            unsafe_allow_html=True)
+    st.markdown("<div class='app-subtitle'>Finde Webseiten, die Optimierung brauchen!</div>", unsafe_allow_html=True)
+    keyword = st.text_input("Keyword eingeben", "")
+    go = st.button("Scan starten")
+
+    # Ergebnisse/Tabelle bleiben auch IN der Card!
+    if go:
+        if not keyword:
+            st.warning("Bitte gib ein Keyword ein.")
+        else:
+            with st.spinner("Suche läuft..."):
+                results = run_search(keyword)
+                if results:
+                    progress_bar = st.progress(0, text="Seiten werden geprüft…")
+                    pagespeed_results = check_pagespeed(results, progress_bar)
+                    if pagespeed_results:
+                        df = pd.DataFrame(pagespeed_results).sort_values(by="Position")
+                        styled_df = df.style.applymap(highlight_score, subset=["Score"])
+                        st.subheader("🔎 Detaillierte Ergebnisse")
+                        st.dataframe(styled_df)
+                        st.success("Analyse abgeschlossen!")
+                    else:
+                        st.info("Keine Webseiten mit ausreichender Bewertung gefunden.")
                 else:
-                    st.info("Keine Webseiten mit ausreichender Bewertung gefunden.")
-            else:
-                st.info("Keine Ergebnisse für das Keyword gefunden.")
+                    st.info("Keine Ergebnisse für das Keyword gefunden.")
+    st.markdown('</div>', unsafe_allow_html=True)
