@@ -1,7 +1,6 @@
 import streamlit as st
 import pandas as pd
 import requests
-from serpapi import GoogleSearch
 
 # API-Keys direkt im Code
 SERPAPI_KEY = "833c2605f2e281d47aec475bec3ad361c317c722bf2104726a0ef6881dc2642c"
@@ -16,10 +15,14 @@ def run_search(keyword):
         "api_key": SERPAPI_KEY
     }
     try:
-        search = GoogleSearch(params)
-        results = search.get_dict()
-        organic_results = results.get("organic_results", [])
-        return [(res["link"], idx + 1) for idx, res in enumerate(organic_results) if "link" in res]
+        response = requests.get("https://serpapi.com/search", params=params)
+        if response.status_code == 200:
+            results = response.json()
+            organic_results = results.get("organic_results", [])
+            return [(res["link"], idx + 1) for idx, res in enumerate(organic_results) if "link" in res]
+        else:
+            st.error(f"Fehler bei der Google-Suche: Statuscode {response.status_code}")
+            return []
     except Exception as e:
         st.error(f"Fehler bei der Google-Suche: {e}")
         return []
@@ -129,4 +132,3 @@ if st.button("Scan starten"):
                     st.info("Keine Webseiten mit ausreichender Bewertung gefunden.")
             else:
                 st.info("Keine Ergebnisse für das Keyword gefunden.")
-                
