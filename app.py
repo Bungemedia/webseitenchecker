@@ -2,100 +2,95 @@ import streamlit as st
 import pandas as pd
 import requests
 
-# Seite konfigurieren
 st.set_page_config(page_title="Webseiten-Checker", page_icon="logo.png", layout="centered")
 
-# CSS nur einmal
+# CSS für Card, Button etc.
 st.markdown("""
-<style>
-body, [data-testid="stAppViewContainer"], html {
-    background: #fff !important;
-    color: #232323 !important;
-}
-.page-center-card {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 96vh;
-}
-.center-card {
-    background: #fff;
-    border-radius: 24px;
-    box-shadow: 0 8px 32px #0001;
-    padding: 2.4rem 2.1rem 2rem 2.1rem;
-    min-width: 320px;
-    max-width: 430px;
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-}
-.header-flex {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 16px;
-    margin-bottom: 0.8em;
-}
-.header-flex img {
-    width: 48px;
-    height: 48px;
-    border-radius: 8px;
-    object-fit: contain;
-    margin-bottom: 0;
-    background: #fff;
-    box-shadow: 0 1px 4px #0001;
-}
-.header-flex h1 {
-    font-size: 2rem;
-    font-weight: 800;
-    margin: 0;
-    color: #232323;
-    letter-spacing: -1px;
-}
-.app-subtitle {
-    text-align: center;
-    margin-bottom: 1.3em;
-    color: #232323;
-    font-weight: 500;
-    font-size: 1.08rem;
-}
-.stTextInput>div>div>input {
-    background: #fff !important;
-    color: #222 !important;
-    border-radius: 12px !important;
-    padding: 0.6em 1em !important;
-    border: 1px solid #e7e7e7 !important;
-}
-.stButton > button {
-    background: linear-gradient(90deg, #132c57 0%, #223a5e 100%) !important;
-    color: white !important;
-    font-weight: bold;
-    border-radius: 14px;
-    border: none;
-    padding: 0.7em 2em;
-    margin-bottom: 1em;
-    box-shadow: 0 2px 12px #132c5730;
-    transition: background 0.3s;
-}
-.stButton > button:hover {
-    background: linear-gradient(90deg, #223a5e 0%, #132c57 100%) !important;
-}
-</style>
+    <style>
+    body, [data-testid="stAppViewContainer"], html {
+        background: #fff !important;
+        color: #232323 !important;
+    }
+    .center-card {
+        background: #fff;
+        border-radius: 24px;
+        box-shadow: 0 8px 32px #0001;
+        padding: 2.4rem 2.1rem 2rem 2.1rem;
+        min-width: 320px;
+        max-width: 430px;
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        margin: 48px auto 32px auto;
+    }
+    .header-flex {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 16px;
+        margin-bottom: 0.8em;
+    }
+    .header-flex img {
+        width: 48px;
+        height: 48px;
+        border-radius: 8px;
+        object-fit: contain;
+        margin-bottom: 0;
+        background: #fff;
+        box-shadow: 0 1px 4px #0001;
+    }
+    .header-flex h1 {
+        font-size: 2rem;
+        font-weight: 800;
+        margin: 0;
+        color: #232323;
+        letter-spacing: -1px;
+    }
+    .app-subtitle {
+        text-align: center;
+        margin-bottom: 1.3em;
+        color: #232323;
+        font-weight: 500;
+        font-size: 1.08rem;
+    }
+    .stTextInput>div>div>input {
+        background: #fff !important;
+        color: #222 !important;
+        border-radius: 12px !important;
+        padding: 0.6em 1em !important;
+        border: 1px solid #e7e7e7 !important;
+    }
+    .stButton > button {
+        background: linear-gradient(90deg, #132c57 0%, #223a5e 100%) !important;
+        color: white !important;
+        font-weight: bold;
+        border-radius: 14px;
+        border: none;
+        padding: 0.7em 2em;
+        margin-bottom: 1em;
+        box-shadow: 0 2px 12px #132c5730;
+        transition: background 0.3s;
+    }
+    .stButton > button:hover {
+        background: linear-gradient(90deg, #223a5e 0%, #132c57 100%) !important;
+    }
+    </style>
 """, unsafe_allow_html=True)
 
-# --- CARD-ONLY UI ---
-st.markdown('<div class="page-center-card"><div class="center-card">', unsafe_allow_html=True)
-st.markdown('<div class="header-flex">', unsafe_allow_html=True)
-st.image("logo.png", width=48)
-st.markdown('<h1>Webseiten-Checker</h1></div>', unsafe_allow_html=True)
-st.markdown('<div class="app-subtitle">Finde Webseiten, die Optimierung brauchen!</div>', unsafe_allow_html=True)
+# -- ALLES im Container --
+with st.container():
+    st.markdown('<div class="center-card">', unsafe_allow_html=True)
+    st.markdown('<div class="header-flex">', unsafe_allow_html=True)
+    st.image("logo.png", width=48)
+    st.markdown('<h1>Webseiten-Checker</h1></div>', unsafe_allow_html=True)
+    st.markdown('<div class="app-subtitle">Finde Webseiten, die Optimierung brauchen!</div>', unsafe_allow_html=True)
 
-keyword = st.text_input("Keyword eingeben", "")
-go = st.button("Scan starten")
-st.markdown('</div></div>', unsafe_allow_html=True)  # Card zu
+    keyword = st.text_input("Keyword eingeben", "")
+    go = st.button("Scan starten")
+    st.markdown('</div>', unsafe_allow_html=True)  # Center-Card zu
 
-# ----------- FUNKTIONEN & LOGIK -----------
+# -------------- FUNKTIONEN & LOGIK --------------
 SERPAPI_KEY = "833c2605f2e281d47aec475bec3ad361c317c722bf2104726a0ef6881dc2642c"
 GOOGLE_API_KEY = "AIzaSyDbjJJZnl2kcZhWvz7V-80bQhgEodm6GZU"
 
@@ -170,7 +165,7 @@ def highlight_score(val):
     else:
         return 'background-color: #66ff66; color: black;'
 
-# --- Ergebnisse nach Card ---
+# Ergebnisse nach Card anzeigen
 if go:
     if not keyword:
         st.warning("Bitte gib ein Keyword ein.")
