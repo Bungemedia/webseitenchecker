@@ -4,57 +4,72 @@ import requests
 
 st.set_page_config(page_title="Webseiten-Checker", page_icon="logo.png", layout="centered")
 
-# --- Style: Button und Farben ---
+# --- DARK STYLE ---
 st.markdown("""
     <style>
     html, body, [data-testid="stAppViewContainer"] {
-        background: #fff !important;
-        color: #232323 !important;
-    }
-    .app-subtitle {
-        text-align: center;
-        margin-bottom: 2em;
-        color: #232323;
-        font-weight: 500;
-        font-size: 1.10rem;
+        background: #10131a !important;
+        color: #e9ecef !important;
     }
     .stTextInput>div>div>input {
-        background: #fff !important;
-        color: #232323 !important;
+        background: #23262f !important;
+        color: #e9ecef !important;
         border-radius: 12px !important;
         padding: 0.6em 1em !important;
-        border: 1px solid #e7e7e7 !important;
+        border: 1.5px solid #25304b !important;
     }
     .stButton > button {
-        background: linear-gradient(90deg, #132c57 0%, #223a5e 100%) !important;
-        color: white !important;
+        background: linear-gradient(90deg, #132c57 0%, #1a2854 100%) !important;
+        color: #e9ecef !important;
         font-weight: bold;
         border-radius: 14px;
         border: none;
         padding: 0.7em 2em;
         margin-bottom: 1em;
         margin-top: 1em;
-        box-shadow: 0 2px 12px #132c5730;
+        box-shadow: 0 2px 14px #10131a60;
         transition: background 0.3s;
     }
     .stButton > button:hover {
         background: linear-gradient(90deg, #223a5e 0%, #132c57 100%) !important;
     }
+    .app-subtitle {
+        text-align: center;
+        margin-bottom: 2em;
+        color: #e9ecef;
+        font-weight: 500;
+        font-size: 1.10rem;
+    }
+    .main-card {
+        background: #171a22 !important;
+        border-radius: 20px;
+        box-shadow: 0 8px 32px #0009;
+        padding: 2.5rem 2.1rem 2.3rem 2.1rem;
+        margin: 48px auto 30px auto;
+        max-width: 570px;
+        min-width: 320px;
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
     </style>
 """, unsafe_allow_html=True)
 
 # --- LOGO + TITEL nebeneinander mit columns ---
-col1, col2 = st.columns([1, 5])
-with col1:
-    st.image("logo.png", width=56)
-with col2:
-    st.markdown("<h1 style='margin-top: 18px; font-size:2.3rem; font-weight:800; letter-spacing:-1px;'>Webseiten-Checker</h1>", unsafe_allow_html=True)
-
-st.markdown("<div class='app-subtitle'>Finde Webseiten, die Optimierung brauchen!</div>", unsafe_allow_html=True)
-
-# ---- Streamlit-Widgets
-keyword = st.text_input("Keyword eingeben", "")
-go = st.button("Scan starten")
+with st.container():
+    st.markdown('<div class="main-card">', unsafe_allow_html=True)
+    col1, col2 = st.columns([1, 5])
+    with col1:
+        st.image("logo.png", width=56)
+    with col2:
+        st.markdown(
+            "<h1 style='margin-top: 18px; font-size:2.3rem; font-weight:800; letter-spacing:-1px; color:#e9ecef;'>Webseiten-Checker</h1>",
+            unsafe_allow_html=True)
+    st.markdown("<div class='app-subtitle'>Finde Webseiten, die Optimierung brauchen!</div>", unsafe_allow_html=True)
+    keyword = st.text_input("Keyword eingeben", "")
+    go = st.button("Scan starten")
+    st.markdown('</div>', unsafe_allow_html=True)
 
 SERPAPI_KEY = "833c2605f2e281d47aec475bec3ad361c317c722bf2104726a0ef6881dc2642c"
 GOOGLE_API_KEY = "AIzaSyDbjJJZnl2kcZhWvz7V-80bQhgEodm6GZU"
@@ -122,15 +137,14 @@ def categorize_score(score):
 
 def highlight_score(val):
     if val <= 49:
-        return 'background-color: #ff4d4d; color: white;'
+        return 'background-color: #e74c3c; color: white;'
     elif val <= 69:
         return 'background-color: #ffa64d; color: black;'
     elif val <= 89:
         return 'background-color: #ffff66; color: black;'
     else:
-        return 'background-color: #66ff66; color: black;'
+        return 'background-color: #2ecc71; color: black;'
 
-# --- Ergebnisse ---
 if go:
     if not keyword:
         st.warning("Bitte gib ein Keyword ein.")
