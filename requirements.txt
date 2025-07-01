@@ -3,4 +3,3 @@ pandas
 requests
 serpapi
 beautifulsoup4
-streamlit-aggrid
