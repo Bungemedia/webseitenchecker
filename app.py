@@ -2,62 +2,22 @@ import streamlit as st
 import pandas as pd
 import requests
 
-# ---- SEITENKONFIG ----
-st.set_page_config(
-    page_title="Webseiten-Checker",
-    page_icon="logo.png",
-    layout="centered"
-)
+st.set_page_config(page_title="Webseiten-Checker", page_icon="logo.png", layout="centered")
 
-# ---- DARK THEME & OPTISCHES LAYOUT ----
+# --- Style für den Dark Mode ---
 st.markdown("""
     <style>
     html, body, [data-testid="stAppViewContainer"] {
-        background: #171a22 !important;
-        color: #e9ecef !important;
+        background: #181a1e !important;
+        color: #fff !important;
     }
-    .main .block-container {
-        background: transparent !important;
-        padding-top: 56px !important;
-    }
-    col1, col2 = st.columns([1, 6])
-with col1:
-    st.image("logo.png", width=60)
-with col2:
-    st.markdown("<h1 style='margin-bottom:0.2em;'>Webseiten-Checker</h1>", unsafe_allow_html=True)
-    }
-    .header-flex img {
-        width: 56px;
-        height: 56px;
-        border-radius: 10px;
-        margin-bottom: 0;
-        box-shadow: 0 2px 10px #0003;
-        background: #223;
-        object-fit: contain;
-    }
-    .header-flex h1 {
-        font-size: 2.3rem;
-        font-weight: 800;
-        margin: 0;
-        color: #e9ecef;
-        letter-spacing: -1px;
-    }
-    .app-subtitle {
-        text-align: center;
-        margin-bottom: 2.1em;
-        color: #e9ecef;
-        font-weight: 500;
-        font-size: 1.08rem;
-    }
-    /* Eingabefeld */
     .stTextInput>div>div>input {
-        background: #22242c !important;
-        color: #e9ecef !important;
+        background: #222 !important;
+        color: #fff !important;
         border-radius: 12px !important;
         padding: 0.6em 1em !important;
-        border: 1px solid #223 !important;
+        border: 1px solid #2b2e32 !important;
     }
-    /* Button */
     .stButton > button {
         background: linear-gradient(90deg, #132c57 0%, #223a5e 100%) !important;
         color: white !important;
@@ -72,35 +32,23 @@ with col2:
     .stButton > button:hover {
         background: linear-gradient(90deg, #223a5e 0%, #132c57 100%) !important;
     }
-    /* Autofill fix für Chrome */
-    input:-webkit-autofill,
-    input:-webkit-autofill:focus {
-        box-shadow: 0 0 0 1000px #22242c inset !important;
-        -webkit-box-shadow: 0 0 0 1000px #22242c inset !important;
-        -webkit-text-fill-color: #e9ecef !important;
-        color: #e9ecef !important;
-        background-color: #22242c !important;
-    }
     </style>
 """, unsafe_allow_html=True)
 
-# HEADER: Logo und H1 in einer Reihe
-st.markdown(
-    '''
-    <div class="header-flex">
-        <img src="logo.png" alt="Logo"/>
-        <h1>Webseiten-Checker</h1>
-    </div>
-    ''',
-    unsafe_allow_html=True
-)
-st.markdown('<div class="app-subtitle">Finde Webseiten, die Optimierung brauchen!</div>', unsafe_allow_html=True)
+# --- Header: Logo und Titel in einer Zeile (columns!) ---
+col1, col2 = st.columns([1, 8])
+with col1:
+    st.image("logo.png", width=60)
+with col2:
+    st.markdown("<h1 style='margin-bottom:0.2em; color:#fff;'>Webseiten-Checker</h1>", unsafe_allow_html=True)
 
-# EINGABE
+st.markdown("<div style='text-align:center; margin-bottom:1.5em; color:#fff;'>Finde Webseiten, die Optimierung brauchen!</div>", unsafe_allow_html=True)
+
+# --- Eingabe-Feld und Button ---
 keyword = st.text_input("Keyword eingeben", "")
 go = st.button("Scan starten")
 
-# ---- FUNKTIONEN & API-KEYS ----
+# --- Funktionen wie gehabt ---
 SERPAPI_KEY = "833c2605f2e281d47aec475bec3ad361c317c722bf2104726a0ef6881dc2642c"
 GOOGLE_API_KEY = "AIzaSyDbjJJZnl2kcZhWvz7V-80bQhgEodm6GZU"
 
@@ -175,7 +123,7 @@ def highlight_score(val):
     else:
         return 'background-color: #66ff66; color: black;'
 
-# ---- ERGEBNIS ----
+# --- Ergebnisse anzeigen ---
 if go:
     if not keyword:
         st.warning("Bitte gib ein Keyword ein.")
