@@ -9,7 +9,7 @@ st.set_page_config(
     layout="centered"
 )
 
-# ---- DARK THEME & AUTOFILL FIX ----
+# ---- DARK THEME & OPTISCHES LAYOUT ----
 st.markdown("""
     <style>
     html, body, [data-testid="stAppViewContainer"] {
@@ -18,38 +18,40 @@ st.markdown("""
     }
     .main .block-container {
         background: transparent !important;
+        padding-top: 56px !important;
     }
+    /* HEADER: Logo + H1 */
     .header-flex {
         display: flex;
         align-items: center;
         justify-content: center;
         gap: 24px;
-        margin-bottom: 1.5em;
-        flex-wrap: wrap;
+        margin-bottom: 0.7em;
     }
     .header-flex img {
-        max-width: 64px;
-        height: auto;
+        width: 56px;
+        height: 56px;
+        border-radius: 10px;
         margin-bottom: 0;
         box-shadow: 0 2px 10px #0003;
-        border-radius: 8px;
         background: #223;
+        object-fit: contain;
     }
     .header-flex h1 {
-        font-size: 2.2rem;
-        font-weight: 700;
+        font-size: 2.3rem;
+        font-weight: 800;
         margin: 0;
         color: #e9ecef;
         letter-spacing: -1px;
     }
-    .input-card {
-        background: #171a22;
-        border-radius: 20px;
-        box-shadow: 0 2px 14px #0003;
-        padding: 2em;
-        max-width: 540px;
-        margin: auto;
+    .app-subtitle {
+        text-align: center;
+        margin-bottom: 2.1em;
+        color: #e9ecef;
+        font-weight: 500;
+        font-size: 1.08rem;
     }
+    /* Eingabefeld */
     .stTextInput>div>div>input {
         background: #22242c !important;
         color: #e9ecef !important;
@@ -57,6 +59,7 @@ st.markdown("""
         padding: 0.6em 1em !important;
         border: 1px solid #223 !important;
     }
+    /* Button */
     .stButton > button {
         background: linear-gradient(90deg, #132c57 0%, #223a5e 100%) !important;
         color: white !important;
@@ -71,14 +74,7 @@ st.markdown("""
     .stButton > button:hover {
         background: linear-gradient(90deg, #223a5e 0%, #132c57 100%) !important;
     }
-    .app-subtitle {
-        text-align: center;
-        margin-bottom: 1.3em;
-        color: #e9ecef;
-        font-weight: 500;
-        font-size: 1.08rem;
-    }
-    /* Autofill background hack für Chrome/Edge */
+    /* Autofill fix für Chrome */
     input:-webkit-autofill,
     input:-webkit-autofill:focus {
         box-shadow: 0 0 0 1000px #22242c inset !important;
@@ -90,26 +86,26 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# ---- HEADER (Logo + Titel) ----
-st.markdown('''
+# HEADER: Logo und H1 in einer Reihe
+st.markdown(
+    '''
     <div class="header-flex">
         <img src="logo.png" alt="Logo"/>
         <h1>Webseiten-Checker</h1>
     </div>
-''', unsafe_allow_html=True)
-st.markdown("<div class='app-subtitle'>Finde Webseiten, die Optimierung brauchen!</div>", unsafe_allow_html=True)
+    ''',
+    unsafe_allow_html=True
+)
+st.markdown('<div class="app-subtitle">Finde Webseiten, die Optimierung brauchen!</div>', unsafe_allow_html=True)
 
-# ---- EINGABE-BEREICH ALS KARTE ----
-st.markdown('<div class="input-card">', unsafe_allow_html=True)
+# EINGABE
 keyword = st.text_input("Keyword eingeben", "")
 go = st.button("Scan starten")
-st.markdown('</div>', unsafe_allow_html=True)
 
-# --- API-KEYS (nur Beispiel, deine echten einsetzen!) ---
+# ---- FUNKTIONEN & API-KEYS ----
 SERPAPI_KEY = "833c2605f2e281d47aec475bec3ad361c317c722bf2104726a0ef6881dc2642c"
 GOOGLE_API_KEY = "AIzaSyDbjJJZnl2kcZhWvz7V-80bQhgEodm6GZU"
 
-# ---- FUNKTIONEN ----
 def run_search(keyword):
     params = {
         "engine": "google",
@@ -181,7 +177,7 @@ def highlight_score(val):
     else:
         return 'background-color: #66ff66; color: black;'
 
-# ---- APP LOGIK ----
+# ---- ERGEBNIS ----
 if go:
     if not keyword:
         st.warning("Bitte gib ein Keyword ein.")
@@ -191,7 +187,6 @@ if go:
             if results:
                 progress_bar = st.progress(0, text="Seiten werden geprüft…")
                 pagespeed_results = check_pagespeed(results, progress_bar)
-                
                 if pagespeed_results:
                     df = pd.DataFrame(pagespeed_results).sort_values(by="Position")
                     styled_df = df.style.applymap(highlight_score, subset=["Score"])
