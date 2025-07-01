@@ -2,7 +2,56 @@ import streamlit as st
 import pandas as pd
 import requests
 
-# API-Keys direkt im Code
+# ---- DESIGN ----
+st.set_page_config(page_title="Webseiten-Checker", page_icon="logo.png")
+
+st.markdown("""
+    <style>
+    body {
+        background: linear-gradient(120deg, #ff7100 0%, #33c88a 100%) !important;
+    }
+    .main .block-container {
+        background: rgba(255,255,255,0.92);
+        border-radius: 24px;
+        margin: 3vw auto 2vw auto;
+        padding: 2.5em 3em;
+        box-shadow: 0 6px 32px #0002;
+        max-width: 1140px;
+    }
+    .biglogo { display: flex; justify-content: center; margin-bottom: 0.5em; }
+    .input-card {
+        background: #fafbfc;
+        border-radius: 20px;
+        box-shadow: 0 2px 14px #0001;
+        padding: 2em;
+        max-width: 500px;
+        margin: auto;
+    }
+    .stButton > button {
+        background: linear-gradient(90deg, #ff7100, #33c88a);
+        color: white !important;
+        font-weight: bold;
+        border-radius: 14px;
+        border: none;
+        padding: 0.7em 2em;
+        margin-bottom: 1em;
+    }
+    </style>
+""", unsafe_allow_html=True)
+
+# ---- HEADER & LOGO ----
+st.markdown('<div class="biglogo"><img src="logo.png" width="180"></div>', unsafe_allow_html=True)
+st.markdown("<h1 style='text-align:center; font-weight:700;'>Webseiten-Checker</h1>", unsafe_allow_html=True)
+st.markdown("<div style='text-align:center; margin-bottom:1.5em;'>Finde Webseiten, die Optimierung brauchen!</div>", unsafe_allow_html=True)
+
+# ---- EINGABE ALS CARD ----
+st.markdown('<div class="input-card">', unsafe_allow_html=True)
+keyword = st.text_input("Keyword eingeben", "")
+go = st.button("Scan starten")
+st.markdown('</div>', unsafe_allow_html=True)
+
+# ---- FUNKTIONEN ----
+
 SERPAPI_KEY = "833c2605f2e281d47aec475bec3ad361c317c722bf2104726a0ef6881dc2642c"
 GOOGLE_API_KEY = "AIzaSyDbjJJZnl2kcZhWvz7V-80bQhgEodm6GZU"
 
@@ -30,7 +79,6 @@ def run_search(keyword):
 def check_pagespeed(results, progress_bar):
     headers = {"Content-Type": "application/json"}
     pagespeed_results = []
-
     total = len(results)
     for idx, (url, position) in enumerate(results):
         api_url = f"https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url={url}&strategy=mobile&key={GOOGLE_API_KEY}"
@@ -41,7 +89,6 @@ def check_pagespeed(results, progress_bar):
                 score = data['lighthouseResult']['categories']['performance']['score'] * 100
                 score = round(score, 1)
                 category = categorize_score(score)
-
                 pagespeed_results.append({
                     "Position": position,
                     "Domain": url,
@@ -79,39 +126,9 @@ def highlight_score(val):
     else:
         return 'background-color: #66ff66; color: black;'
 
-# Streamlit-Seite konfigurieren mit eigenem Logo
-st.set_page_config(page_title="Webseiten-Checker", page_icon="logo.png")
+# ---- APP LOGIK ----
 
-# Style für Hintergrund & Layout
-st.markdown("""
-    <style>
-    body {
-        background: linear-gradient(120deg, #ff7100 0%, #33c88a 100%) !important;
-    }
-    .main .block-container {
-        background: rgba(255,255,255,0.85);
-        border-radius: 24px;
-        margin: 3vw auto 2vw auto;
-        padding: 2.5em 3em;
-        box-shadow: 0 6px 32px #0002;
-        max-width: 1140px;
-    }
-    </style>
-""", unsafe_allow_html=True)
-)
-
-# Titel der App
-st.title("Webseiten-Checker")
-
-# Logo anzeigen (hier Breite anpassen, falls nötig)
-st.image("logo.png", width=300)
-
-st.write("Gib dein Keyword ein und finde Webseiten, die Optimierung brauchen:")
-
-# Keyword-Feld ist standardmäßig leer
-keyword = st.text_input("Keyword", "")
-
-if st.button("Scan starten"):
+if go:
     if not keyword:
         st.warning("Bitte gib ein Keyword ein.")
     else:
