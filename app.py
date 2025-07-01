@@ -4,7 +4,7 @@ import requests
 
 st.set_page_config(page_title="Webseiten-Checker", page_icon="logo.png", layout="centered")
 
-# --- Style für den Dark Mode ---
+# --- CLEAN DARK THEME & HEADLINE ZENTRIERUNG ---
 st.markdown("""
     <style>
     html, body, [data-testid="stAppViewContainer"] {
@@ -35,14 +35,28 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# --- Header: Logo und Titel in einer Zeile (columns!) ---
-col1, col2 = st.columns([1, 8])
-with col1:
-    st.image("logo.png", width=60)
-with col2:
-    st.markdown("<h1 style='margin-bottom:0.2em; color:#fff;'>Webseiten-Checker</h1>", unsafe_allow_html=True)
+# ---- OBEN: LOGO UND HEADLINE ----
+st.markdown(
+    """
+    <div style='text-align:center; margin-bottom:0.7em;'>
+        <img src="logo.png" width="72" style="margin-bottom: -7px;" />
+        <h1 style='display:inline-block; vertical-align: middle; margin-left:0.3em; color:#fff; font-weight:800;'>Webseiten-Checker</h1>
+    </div>
+    """,
+    unsafe_allow_html=True
+)
 
-st.markdown("<div style='text-align:center; margin-bottom:1.5em; color:#fff;'>Finde Webseiten, die Optimierung brauchen!</div>", unsafe_allow_html=True)
+st.markdown(
+    "<div style='text-align:center; margin-bottom:2.2em; color:#fff;'>Finde Webseiten, die Optimierung brauchen!</div>",
+    unsafe_allow_html=True
+)
+
+# ---- INPUT & BUTTON ----
+keyword = st.text_input("Keyword eingeben", "")
+go = st.button("Scan starten")
+
+# --- FUNKTIONEN (wie gehabt, darunter) ---
+# ... Rest deines Codes wie gehabt ...
 
 # --- Eingabe-Feld und Button ---
 keyword = st.text_input("Keyword eingeben", "")
