@@ -9,7 +9,7 @@ st.set_page_config(
     layout="centered"
 )
 
-# --- Style: Card & Weißer Hintergrund ---
+# --- Style ---
 st.markdown("""
 <style>
 body, [data-testid="stAppViewContainer"], html {
@@ -88,20 +88,18 @@ body, [data-testid="stAppViewContainer"], html {
 </style>
 """, unsafe_allow_html=True)
 
-# --- Card & Input (Logo, H1, Subtitle, Feld, Button) ---
-with st.container():
-    st.markdown('<div class="page-center-card"><div class="center-card">', unsafe_allow_html=True)
-    # Logo + Headline nebeneinander
-    st.markdown('<div class="header-flex">', unsafe_allow_html=True)
-    st.image("logo.png", width=48)
-    st.markdown('<h1>Webseiten-Checker</h1></div>', unsafe_allow_html=True)
-    st.markdown('<div class="app-subtitle">Finde Webseiten, die Optimierung brauchen!</div>', unsafe_allow_html=True)
+# --- CARD LAYOUT ---
+st.markdown('<div class="page-center-card"><div class="center-card">', unsafe_allow_html=True)
+st.markdown('<div class="header-flex">', unsafe_allow_html=True)
+st.image("logo.png", width=48)
+st.markdown('<h1>Webseiten-Checker</h1></div>', unsafe_allow_html=True)
+st.markdown('<div class="app-subtitle">Finde Webseiten, die Optimierung brauchen!</div>', unsafe_allow_html=True)
 
-    keyword = st.text_input("Keyword eingeben", "")
-    go = st.button("Scan starten")
-    st.markdown('</div></div>', unsafe_allow_html=True)  # Card zu
+keyword = st.text_input("Keyword eingeben", "")
+go = st.button("Scan starten")
+st.markdown('</div></div>', unsafe_allow_html=True)  # Card zu
 
-# -------- Funktionen & Logik --------
+# -------- FUNKTIONEN & LOGIK --------
 SERPAPI_KEY = "833c2605f2e281d47aec475bec3ad361c317c722bf2104726a0ef6881dc2642c"
 GOOGLE_API_KEY = "AIzaSyDbjJJZnl2kcZhWvz7V-80bQhgEodm6GZU"
 
