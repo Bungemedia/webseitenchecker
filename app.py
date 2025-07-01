@@ -64,7 +64,7 @@ col1, col2 = st.columns([2, 1])
 with col1:
     keyword = st.text_input("Keyword eingeben", "")
 with col2:
-    num_results = st.selectbox("Anzahl Ergebnisse", [5, 10, 20, 30], index=1)
+    num_results = st.selectbox("Anzahl Ergebnisse", [1, 5, 10, 20, 30], index=1)
 
 go = st.button("Scan starten")
 
