@@ -18,7 +18,26 @@ st.markdown("""
         box-shadow: 0 6px 32px #0002;
         max-width: 1140px;
     }
-    .biglogo { display: flex; justify-content: center; margin-bottom: 0.5em; }
+    .header-flex {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 24px;
+        margin-bottom: 1.5em;
+        flex-wrap: wrap;
+    }
+    .header-flex img {
+        max-width: 70px;
+        height: auto;
+        margin-bottom: 0;
+    }
+    .header-flex h1 {
+        font-size: 2.4rem;
+        font-weight: 700;
+        margin: 0;
+        color: #222;
+        letter-spacing: -1px;
+    }
     .input-card {
         background: #fafbfc;
         border-radius: 20px;
@@ -28,26 +47,30 @@ st.markdown("""
         margin: auto;
     }
     .stButton > button {
-    background: linear-gradient(90deg, #132c57 0%, #223a5e 100%) !important;
-    color: white !important;
-    font-weight: bold;
-    border-radius: 14px;
-    border: none;
-    padding: 0.7em 2em;
-    margin-bottom: 1em;
-    box-shadow: 0 2px 12px #132c5730;
-    transition: background 0.3s;
-}
-.stButton > button:hover {
-    background: linear-gradient(90deg, #223a5e 0%, #132c57 100%) !important;
-}
+        background: linear-gradient(90deg, #132c57 0%, #223a5e 100%) !important;
+        color: white !important;
+        font-weight: bold;
+        border-radius: 14px;
+        border: none;
+        padding: 0.7em 2em;
+        margin-bottom: 1em;
+        box-shadow: 0 2px 12px #132c5730;
+        transition: background 0.3s;
+    }
+    .stButton > button:hover {
+        background: linear-gradient(90deg, #223a5e 0%, #132c57 100%) !important;
     }
     </style>
 """, unsafe_allow_html=True)
 
-# ---- HEADER & LOGO ----
-st.markdown('<div class="biglogo"><img src="logo.png" width="180"></div>', unsafe_allow_html=True)
-st.markdown("<h1 style='text-align:center; font-weight:700;'>Webseiten-Checker</h1>", unsafe_allow_html=True)
+# ---- HEADER: LOGO + H1 auf einer Linie ----
+st.markdown('''
+    <div class="header-flex">
+        <img src="logo.png" alt="Logo"/>
+        <h1>Webseiten-Checker</h1>
+    </div>
+''', unsafe_allow_html=True)
+
 st.markdown("<div style='text-align:center; margin-bottom:1.5em;'>Finde Webseiten, die Optimierung brauchen!</div>", unsafe_allow_html=True)
 
 # ---- EINGABE ALS CARD ----
