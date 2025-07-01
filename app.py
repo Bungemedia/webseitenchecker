@@ -2,7 +2,6 @@ import streamlit as st
 import pandas as pd
 import requests
 from bs4 import BeautifulSoup
-from st_aggrid import AgGrid, GridOptionsBuilder
 import base64
 
 st.set_page_config(page_title="Webseiten-Checker", page_icon="logo.png", layout="centered")
@@ -56,11 +55,6 @@ st.markdown(
         <h1 style='color:#fff; font-weight:800; margin-top:0.7em; margin-bottom:0;'>Webseiten-Checker</h1>
     </div>
     """,
-    unsafe_allow_html=True
-)
-
-st.markdown(
-    "<div style='text-align:center; margin-bottom:2.2em; color:#fff;'>Finde Webseiten, die Optimierung brauchen!</div>",
     unsafe_allow_html=True
 )
 
@@ -180,6 +174,17 @@ def categorize_score(score):
     else:
         return "90-100 (gut)"
 
+def highlight_score(val):
+    val = float(val)
+    if val <= 49:
+        return 'background-color: #ff4d4d; color: white;'
+    elif val <= 69:
+        return 'background-color: #ffa64d; color: black;'
+    elif val <= 89:
+        return 'background-color: #ffff66; color: black;'
+    else:
+        return 'background-color: #66ff66; color: black;'
+
 # --- Ergebnisse anzeigen ---
 if go:
     if not keyword:
@@ -194,40 +199,9 @@ if go:
                 if pagespeed_results:
                     df = pd.DataFrame(pagespeed_results).sort_values(by="Position")
                     df = df.reset_index(drop=True)
-                    # Clean ALL cells for AgGrid (strings only for non-numeric)
-                    df = df.fillna("-")
-                    for col in df.columns:
-                        df[col] = df[col].apply(lambda x: str(x) if not isinstance(x, (int, float, bool, type(None))) else x)
-                    # Meta/Title kürzen (optional)
-                    max_len = 150
-                    for col in ["Title", "Meta Description"]:
-                        if col in df.columns:
-                            df[col] = df[col].apply(lambda x: (x[:max_len] + "…") if isinstance(x, str) and len(x) > max_len else x)
-                    # AgGrid bauen
-                    gb = GridOptionsBuilder.from_dataframe(df)
-                    gb.configure_pagination(enabled=True)
-                    gb.configure_default_column(groupable=False, editable=False, resizable=True)
-                    gb.configure_column(
-                        "Score",
-                        cellStyle=lambda params: {
-                            'color': 'white',
-                            'backgroundColor': (
-                                '#ff4d4d' if float(params.value) <= 49 else
-                                '#ffa64d' if float(params.value) <= 69 else
-                                '#ffff66' if float(params.value) <= 89 else
-                                '#66ff66'
-                            )
-                        }
-                    )
-                    gridOptions = gb.build()
+                    styled_df = df.style.applymap(highlight_score, subset=["Score"])
                     st.subheader("🔎 Detaillierte Ergebnisse")
-                    AgGrid(
-                        df,
-                        gridOptions=gridOptions,
-                        theme="streamlit",
-                        height=400,
-                        fit_columns_on_grid_load=True
-                    )
+                    st.dataframe(styled_df, hide_index=True)
                     st.success("Analyse abgeschlossen!")
                 else:
                     st.info("Keine Webseiten mit ausreichender Bewertung gefunden.")
