@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 import requests
-from serpapi import GoogleSearch
+from serpapi.google_search import GoogleSearch   # <--- Wichtig: Das ist jetzt der richtige Import!
 
 # API-Keys direkt im Code
 SERPAPI_KEY = "833c2605f2e281d47aec475bec3ad361c317c722bf2104726a0ef6881dc2642c"
@@ -129,3 +129,4 @@ if st.button("Scan starten"):
                     st.info("Keine Webseiten mit ausreichender Bewertung gefunden.")
             else:
                 st.info("Keine Ergebnisse für das Keyword gefunden.")
+                
