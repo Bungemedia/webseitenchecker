@@ -2,42 +2,70 @@ import streamlit as st
 import pandas as pd
 import requests
 
-st.set_page_config(page_title="Webseiten-Checker", page_icon="logo.png", layout="centered")
+# ---- SEITENKONFIG ----
+st.set_page_config(
+    page_title="Webseiten-Checker",
+    page_icon="logo.png",
+    layout="centered"
+)
 
-# -- DARK MODE: Style alles per CSS, Card-Look mit Padding --
+# ---- DARK THEME & AUTOFILL FIX ----
 st.markdown("""
     <style>
     html, body, [data-testid="stAppViewContainer"] {
-        background: #10131a !important;
+        background: #171a22 !important;
         color: #e9ecef !important;
     }
-    .card-ui {
+    .main .block-container {
+        background: transparent !important;
+    }
+    .header-flex {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 24px;
+        margin-bottom: 1.5em;
+        flex-wrap: wrap;
+    }
+    .header-flex img {
+        max-width: 64px;
+        height: auto;
+        margin-bottom: 0;
+        box-shadow: 0 2px 10px #0003;
+        border-radius: 8px;
+        background: #223;
+    }
+    .header-flex h1 {
+        font-size: 2.2rem;
+        font-weight: 700;
+        margin: 0;
+        color: #e9ecef;
+        letter-spacing: -1px;
+    }
+    .input-card {
         background: #171a22;
         border-radius: 20px;
-        box-shadow: 0 8px 32px #0009;
-        padding: 2.6rem 2.1rem 2.3rem 2.1rem;
-        margin: 50px auto 24px auto;
-        max-width: 560px;
-        min-width: 320px;
-        width: 100%;
+        box-shadow: 0 2px 14px #0003;
+        padding: 2em;
+        max-width: 540px;
+        margin: auto;
     }
     .stTextInput>div>div>input {
-        background: #23262f !important;
+        background: #22242c !important;
         color: #e9ecef !important;
         border-radius: 12px !important;
         padding: 0.6em 1em !important;
-        border: 1.5px solid #25304b !important;
+        border: 1px solid #223 !important;
     }
     .stButton > button {
-        background: linear-gradient(90deg, #132c57 0%, #1a2854 100%) !important;
-        color: #e9ecef !important;
+        background: linear-gradient(90deg, #132c57 0%, #223a5e 100%) !important;
+        color: white !important;
         font-weight: bold;
         border-radius: 14px;
         border: none;
         padding: 0.7em 2em;
         margin-bottom: 1em;
-        margin-top: 1em;
-        box-shadow: 0 2px 14px #10131a60;
+        box-shadow: 0 2px 12px #132c5730;
         transition: background 0.3s;
     }
     .stButton > button:hover {
@@ -45,121 +73,132 @@ st.markdown("""
     }
     .app-subtitle {
         text-align: center;
-        margin-bottom: 2em;
+        margin-bottom: 1.3em;
         color: #e9ecef;
         font-weight: 500;
-        font-size: 1.10rem;
+        font-size: 1.08rem;
+    }
+    /* Autofill background hack für Chrome/Edge */
+    input:-webkit-autofill,
+    input:-webkit-autofill:focus {
+        box-shadow: 0 0 0 1000px #22242c inset !important;
+        -webkit-box-shadow: 0 0 0 1000px #22242c inset !important;
+        -webkit-text-fill-color: #e9ecef !important;
+        color: #e9ecef !important;
+        background-color: #22242c !important;
     }
     </style>
 """, unsafe_allow_html=True)
 
-# -- UI: Alles im Streamlit Container --
-with st.container():
-    st.markdown('<div class="card-ui">', unsafe_allow_html=True)
-    col1, col2 = st.columns([1, 5])
-    with col1:
-        st.image("logo.png", width=56)
-    with col2:
-        st.markdown(
-            "<h1 style='margin-top: 18px; font-size:2.3rem; font-weight:800; letter-spacing:-1px; color:#e9ecef;'>Webseiten-Checker</h1>",
-            unsafe_allow_html=True)
-    st.markdown("<div class='app-subtitle'>Finde Webseiten, die Optimierung brauchen!</div>", unsafe_allow_html=True)
-    keyword = st.text_input("Keyword eingeben", "")
-    go = st.button("Scan starten")
+# ---- HEADER (Logo + Titel) ----
+st.markdown('''
+    <div class="header-flex">
+        <img src="logo.png" alt="Logo"/>
+        <h1>Webseiten-Checker</h1>
+    </div>
+''', unsafe_allow_html=True)
+st.markdown("<div class='app-subtitle'>Finde Webseiten, die Optimierung brauchen!</div>", unsafe_allow_html=True)
 
-    # -- Ergebnisse/Tabelle und alles weitere BLEIBT IM SELBEN Container --
-    if go:
-        if not keyword:
-            st.warning("Bitte gib ein Keyword ein.")
+# ---- EINGABE-BEREICH ALS KARTE ----
+st.markdown('<div class="input-card">', unsafe_allow_html=True)
+keyword = st.text_input("Keyword eingeben", "")
+go = st.button("Scan starten")
+st.markdown('</div>', unsafe_allow_html=True)
+
+# --- API-KEYS (nur Beispiel, deine echten einsetzen!) ---
+SERPAPI_KEY = "833c2605f2e281d47aec475bec3ad361c317c722bf2104726a0ef6881dc2642c"
+GOOGLE_API_KEY = "AIzaSyDbjJJZnl2kcZhWvz7V-80bQhgEodm6GZU"
+
+# ---- FUNKTIONEN ----
+def run_search(keyword):
+    params = {
+        "engine": "google",
+        "q": keyword,
+        "location": "Germany",
+        "num": 10,
+        "api_key": SERPAPI_KEY
+    }
+    try:
+        response = requests.get("https://serpapi.com/search", params=params)
+        if response.status_code == 200:
+            results = response.json()
+            organic_results = results.get("organic_results", [])
+            return [(res["link"], idx + 1) for idx, res in enumerate(organic_results) if "link" in res]
         else:
-            with st.spinner("Suche läuft..."):
-                SERPAPI_KEY = "833c2605f2e281d47aec475bec3ad361c317c722bf2104726a0ef6881dc2642c"
-                GOOGLE_API_KEY = "AIzaSyDbjJJZnl2kcZhWvz7V-80bQhgEodm6GZU"
+            st.error(f"Fehler bei der Google-Suche: Statuscode {response.status_code}")
+            return []
+    except Exception as e:
+        st.error(f"Fehler bei der Google-Suche: {e}")
+        return []
 
-                def run_search(keyword):
-                    params = {
-                        "engine": "google",
-                        "q": keyword,
-                        "location": "Germany",
-                        "num": 10,
-                        "api_key": SERPAPI_KEY
-                    }
-                    try:
-                        response = requests.get("https://serpapi.com/search", params=params)
-                        if response.status_code == 200:
-                            results = response.json()
-                            organic_results = results.get("organic_results", [])
-                            return [(res["link"], idx + 1) for idx, res in enumerate(organic_results) if "link" in res]
-                        else:
-                            st.error(f"Fehler bei der Google-Suche: Statuscode {response.status_code}")
-                            return []
-                    except Exception as e:
-                        st.error(f"Fehler bei der Google-Suche: {e}")
-                        return []
+def check_pagespeed(results, progress_bar):
+    headers = {"Content-Type": "application/json"}
+    pagespeed_results = []
+    total = len(results)
+    for idx, (url, position) in enumerate(results):
+        api_url = f"https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url={url}&strategy=mobile&key={GOOGLE_API_KEY}"
+        try:
+            response = requests.get(api_url, headers=headers)
+            if response.status_code == 200:
+                data = response.json()
+                score = data['lighthouseResult']['categories']['performance']['score'] * 100
+                score = round(score, 1)
+                category = categorize_score(score)
+                pagespeed_results.append({
+                    "Position": position,
+                    "Domain": url,
+                    "Score": score,
+                    "Kategorie": category,
+                    "Nachricht": f"Mobile Pagespeed Score: {score:.1f}, Optimierung empfohlen!"
+                })
+            else:
+                st.warning(f"Fehler bei {url}: Statuscode {response.status_code}")
+        except Exception as e:
+            st.warning(f"Fehler bei {url}: {e}")
 
-                def check_pagespeed(results, progress_bar):
-                    headers = {"Content-Type": "application/json"}
-                    pagespeed_results = []
-                    total = len(results)
-                    for idx, (url, position) in enumerate(results):
-                        api_url = f"https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url={url}&strategy=mobile&key={GOOGLE_API_KEY}"
-                        try:
-                            response = requests.get(api_url, headers=headers)
-                            if response.status_code == 200:
-                                data = response.json()
-                                score = data['lighthouseResult']['categories']['performance']['score'] * 100
-                                score = round(score, 1)
-                                category = categorize_score(score)
-                                pagespeed_results.append({
-                                    "Position": position,
-                                    "Domain": url,
-                                    "Score": score,
-                                    "Kategorie": category,
-                                    "Nachricht": f"Mobile Pagespeed Score: {score:.1f}, Optimierung empfohlen!"
-                                })
-                            else:
-                                st.warning(f"Fehler bei {url}: Statuscode {response.status_code}")
-                        except Exception as e:
-                            st.warning(f"Fehler bei {url}: {e}")
+        progress_percent = int(((idx + 1) / total) * 100)
+        progress_bar.progress(progress_percent, text=f"Prüfe Seiten… ({progress_percent}%)")
+    progress_bar.empty()
+    return pagespeed_results
 
-                        progress_percent = int(((idx + 1) / total) * 100)
-                        progress_bar.progress(progress_percent, text=f"Prüfe Seiten… ({progress_percent}%)")
-                    progress_bar.empty()
-                    return pagespeed_results
+def categorize_score(score):
+    if score <= 49:
+        return "0-49 (schlecht)"
+    elif score <= 69:
+        return "50-69 (verbesserungswürdig)"
+    elif score <= 89:
+        return "70-89 (durchschnittlich)"
+    else:
+        return "90-100 (gut)"
 
-                def categorize_score(score):
-                    if score <= 49:
-                        return "0-49 (schlecht)"
-                    elif score <= 69:
-                        return "50-69 (verbesserungswürdig)"
-                    elif score <= 89:
-                        return "70-89 (durchschnittlich)"
-                    else:
-                        return "90-100 (gut)"
+def highlight_score(val):
+    if val <= 49:
+        return 'background-color: #ff4d4d; color: white;'
+    elif val <= 69:
+        return 'background-color: #ffa64d; color: black;'
+    elif val <= 89:
+        return 'background-color: #ffff66; color: black;'
+    else:
+        return 'background-color: #66ff66; color: black;'
 
-                def highlight_score(val):
-                    if val <= 49:
-                        return 'background-color: #e74c3c; color: white;'
-                    elif val <= 69:
-                        return 'background-color: #ffa64d; color: black;'
-                    elif val <= 89:
-                        return 'background-color: #ffff66; color: black;'
-                    else:
-                        return 'background-color: #2ecc71; color: black;'
-
-                results = run_search(keyword)
-                if results:
-                    progress_bar = st.progress(0, text="Seiten werden geprüft…")
-                    pagespeed_results = check_pagespeed(results, progress_bar)
-                    if pagespeed_results:
-                        df = pd.DataFrame(pagespeed_results).sort_values(by="Position")
-                        styled_df = df.style.applymap(highlight_score, subset=["Score"])
-                        st.subheader("🔎 Detaillierte Ergebnisse")
-                        st.dataframe(styled_df)
-                        st.success("Analyse abgeschlossen!")
-                    else:
-                        st.info("Keine Webseiten mit ausreichender Bewertung gefunden.")
+# ---- APP LOGIK ----
+if go:
+    if not keyword:
+        st.warning("Bitte gib ein Keyword ein.")
+    else:
+        with st.spinner("Suche läuft..."):
+            results = run_search(keyword)
+            if results:
+                progress_bar = st.progress(0, text="Seiten werden geprüft…")
+                pagespeed_results = check_pagespeed(results, progress_bar)
+                
+                if pagespeed_results:
+                    df = pd.DataFrame(pagespeed_results).sort_values(by="Position")
+                    styled_df = df.style.applymap(highlight_score, subset=["Score"])
+                    st.subheader("🔎 Detaillierte Ergebnisse")
+                    st.dataframe(styled_df)
+                    st.success("Analyse abgeschlossen!")
                 else:
-                    st.info("Keine Ergebnisse für das Keyword gefunden.")
-
-    st.markdown('</div>', unsafe_allow_html=True)
+                    st.info("Keine Webseiten mit ausreichender Bewertung gefunden.")
+            else:
+                st.info("Keine Ergebnisse für das Keyword gefunden.")
