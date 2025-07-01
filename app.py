@@ -59,6 +59,11 @@ st.markdown(
     unsafe_allow_html=True
 )
 
+st.markdown(
+    "<div style='text-align:center; margin-bottom:2.2em; color:#fff;'>Finde Webseiten, die Optimierung brauchen!</div>",
+    unsafe_allow_html=True
+)
+
 # --- Weitere Eingabefelder ---
 col1, col2 = st.columns([2, 1])
 with col1:
@@ -189,6 +194,16 @@ if go:
                 if pagespeed_results:
                     df = pd.DataFrame(pagespeed_results).sort_values(by="Position")
                     df = df.reset_index(drop=True)
+                    # Clean ALL cells for AgGrid (strings only for non-numeric)
+                    df = df.fillna("-")
+                    for col in df.columns:
+                        df[col] = df[col].apply(lambda x: str(x) if not isinstance(x, (int, float, bool, type(None))) else x)
+                    # Meta/Title kürzen (optional)
+                    max_len = 150
+                    for col in ["Title", "Meta Description"]:
+                        if col in df.columns:
+                            df[col] = df[col].apply(lambda x: (x[:max_len] + "…") if isinstance(x, str) and len(x) > max_len else x)
+                    # AgGrid bauen
                     gb = GridOptionsBuilder.from_dataframe(df)
                     gb.configure_pagination(enabled=True)
                     gb.configure_default_column(groupable=False, editable=False, resizable=True)
