@@ -38,11 +38,9 @@ st.markdown("""
 # ---- OBEN: LOGO UND HEADLINE ----
 st.markdown(
     """
-    <div style='text-align:center; margin-bottom:0.7em;'>
-        <img src="logo.png" width="72" style="margin-bottom: -7px;" />
-        <h1 style='display:inline-block; vertical-align: middle; margin-left:0.3em; color:#fff; font-weight:800;'>Webseiten-Checker</h1>
-    </div>
-    """,
+    st.image("logo.png", width=72)
+st.markdown(
+    "<h1 style='text-align:center; color:#fff; font-weight:800; margin-top:-10px;'>Webseiten-Checker</h1>",
     unsafe_allow_html=True
 )
 
