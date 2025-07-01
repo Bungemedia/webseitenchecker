@@ -7,13 +7,15 @@ import base64
 
 st.set_page_config(page_title="Webseiten-Checker", page_icon="logo.png", layout="centered")
 
-# ---- BASE64 LOGO (PLATZHALTER) ----
-# Ersetze den String durch deinen echten Base64-String!
-logo_base64 = (
-    "iVBORw0KGgoAAAANSUhEUgAAAGQAAAAyCAYAAADHDwA..."  # <- Hier kommt dein ganzer Base64-String rein!
-)
+# --- LOGO einlesen (aus Datei in Base64 kodieren) ---
+def get_base64_logo(file_path):
+    with open(file_path, "rb") as image_file:
+        encoded = base64.b64encode(image_file.read()).decode()
+    return encoded
 
-# ---- DARK THEME & HEADLINE ZENTRIERUNG ----
+logo_base64 = get_base64_logo("logo.png")  # Datei muss im selben Ordner liegen!
+
+# --- CLEAN DARK THEME & HEADLINE ZENTRIERUNG ---
 st.markdown("""
     <style>
     html, body, [data-testid="stAppViewContainer"] {
@@ -44,7 +46,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# ---- OBEN: LOGO UND HEADLINE ----
+# --- LOGO & HEADLINE ---
 st.markdown(
     f"""
     <div style='text-align:center; margin-bottom:0.7em;'>
@@ -54,11 +56,6 @@ st.markdown(
         <h1 style='color:#fff; font-weight:800; margin-top:0.7em; margin-bottom:0;'>Webseiten-Checker</h1>
     </div>
     """,
-    unsafe_allow_html=True
-)
-
-st.markdown(
-    "<div style='text-align:center; margin-bottom:2.2em; color:#fff;'>Finde Webseiten, die Optimierung brauchen!</div>",
     unsafe_allow_html=True
 )
 
