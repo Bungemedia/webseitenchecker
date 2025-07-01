@@ -3,101 +3,100 @@ import pandas as pd
 import requests
 import os
 
-# ---- PAGE/STYLE ----
+# --- Seite konfigurieren (weißer Hintergrund!) ---
 st.set_page_config(
     page_title="Webseiten-Checker",
     page_icon="logo.png",
-    layout="centered",
-    initial_sidebar_state="auto"
+    layout="centered"
 )
 
-# CSS für kompaktes, modernes Card-Layout & Light Theme
+# --- Style: Nur Card, weißer Hintergrund ---
 st.markdown("""
-    <style>
-    html, body, [data-testid="stAppViewContainer"] {
-        background: linear-gradient(120deg, #ff7100 0%, #33c88a 100%) !important;
-        color: #232323 !important;
-    }
-    .page-center-card {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        min-height: 97vh;
-    }
-    .center-card {
-        background: rgba(255,255,255,0.97);
-        border-radius: 30px;
-        box-shadow: 0 10px 42px #0002;
-        padding: 2.5rem 2.7rem 2rem 2.7rem;
-        min-width: 340px;
-        max-width: 430px;
-        width: 100%;
-        margin-top: 2rem;
-    }
-    .header-flex {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 20px;
-        margin-bottom: 0.7em;
-    }
-    .header-flex img {
-        max-width: 54px;
-        height: 54px;
-        margin-bottom: 0;
-        border-radius: 8px;
-        box-shadow: 0 2px 10px #0001;
-        background: #fff;
-        object-fit: contain;
-        display: inline-block;
-    }
-    .header-flex h1 {
-        font-size: 2.1rem;
-        font-weight: 700;
-        margin: 0;
-        color: #232323;
-        letter-spacing: -1px;
-    }
-    .app-subtitle {
-        text-align: center;
-        margin-bottom: 1.8em;
-        color: #232323;
-        font-weight: 500;
-    }
-    .stTextInput>div>div>input {
-        background: #fff !important;
-        color: #222 !important;
-        border-radius: 12px !important;
-        padding: 0.6em 1em !important;
-        border: 1px solid #eee !important;
-    }
-    .stButton > button {
-        background: linear-gradient(90deg, #132c57 0%, #223a5e 100%) !important;
-        color: white !important;
-        font-weight: bold;
-        border-radius: 14px;
-        border: none;
-        padding: 0.7em 2em;
-        margin-bottom: 1em;
-        box-shadow: 0 2px 12px #132c5730;
-        transition: background 0.3s;
-    }
-    .stButton > button:hover {
-        background: linear-gradient(90deg, #223a5e 0%, #132c57 100%) !important;
-    }
-    </style>
-""", unsafe_allow_html=True)
-
-# ---- HEADER: LOGO + H1 zentriert auf einer Linie ----
-st.markdown("""
+<style>
+body, [data-testid="stAppViewContainer"], html {
+    background: #fff !important;
+    color: #232323 !important;
+}
+.page-center-card {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 97vh;
+}
+.center-card {
+    background: #fff;
+    border-radius: 24px;
+    box-shadow: 0 8px 32px #0001;
+    padding: 2.4rem 2.1rem 2rem 2.1rem;
+    min-width: 320px;
+    max-width: 430px;
+    width: 100%;
+    margin-top: 0;
+    margin-bottom: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+.header-flex {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    margin-bottom: 0.8em;
+}
+.header-flex img {
+    width: 48px;
+    height: 48px;
+    border-radius: 8px;
+    object-fit: contain;
+    margin-bottom: 0;
+    background: #fff;
+    box-shadow: 0 1px 4px #0001;
+}
+.header-flex h1 {
+    font-size: 2rem;
+    font-weight: 800;
+    margin: 0;
+    color: #232323;
+    letter-spacing: -1px;
+}
+.app-subtitle {
+    text-align: center;
+    margin-bottom: 1.3em;
+    color: #232323;
+    font-weight: 500;
+    font-size: 1.08rem;
+}
+.stTextInput>div>div>input {
+    background: #fff !important;
+    color: #222 !important;
+    border-radius: 12px !important;
+    padding: 0.6em 1em !important;
+    border: 1px solid #e7e7e7 !important;
+}
+.stButton > button {
+    background: linear-gradient(90deg, #132c57 0%, #223a5e 100%) !important;
+    color: white !important;
+    font-weight: bold;
+    border-radius: 14px;
+    border: none;
+    padding: 0.7em 2em;
+    margin-bottom: 1em;
+    box-shadow: 0 2px 12px #132c5730;
+    transition: background 0.3s;
+}
+.stButton > button:hover {
+    background: linear-gradient(90deg, #223a5e 0%, #132c57 100%) !important;
+}
+</style>
 <div class="page-center-card">
   <div class="center-card">
     <div class="header-flex">
 """, unsafe_allow_html=True)
 
-# Logo anzeigen (Streamlit garantiert Bildanzeige, onerror ist im Browser nicht nutzbar!)
+# --- Logo und Headline nebeneinander ---
 try:
-    st.image("logo.png", width=54)
+    st.image("logo.png", width=48)
 except Exception:
     st.write("🖼️ [Logo nicht gefunden]")
 
@@ -107,13 +106,12 @@ st.markdown("""
     <div class="app-subtitle">Finde Webseiten, die Optimierung brauchen!</div>
 """, unsafe_allow_html=True)
 
-# ---- INPUT UND BUTTON ----
+# --- Input und Button (alles IN der Card) ---
 keyword = st.text_input("Keyword eingeben", "")
 go = st.button("Scan starten")
+st.markdown("</div></div>", unsafe_allow_html=True)  # Card-Wrapper schließen
 
-st.markdown("</div></div>", unsafe_allow_html=True)  # Card-Wrapper zu
-
-# ---- FUNKTIONEN ----
+# -------- Funktionen und Logik --------
 SERPAPI_KEY = "833c2605f2e281d47aec475bec3ad361c317c722bf2104726a0ef6881dc2642c"
 GOOGLE_API_KEY = "AIzaSyDbjJJZnl2kcZhWvz7V-80bQhgEodm6GZU"
 
@@ -188,7 +186,7 @@ def highlight_score(val):
     else:
         return 'background-color: #66ff66; color: black;'
 
-# ---- APP LOGIK ----
+# -------- App-Logik --------
 if go:
     if not keyword:
         st.warning("Bitte gib ein Keyword ein.")
@@ -208,4 +206,3 @@ if go:
                     st.info("Keine Webseiten mit ausreichender Bewertung gefunden.")
             else:
                 st.info("Keine Ergebnisse für das Keyword gefunden.")
-
