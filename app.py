@@ -4,7 +4,7 @@ import requests
 
 st.set_page_config(page_title="Webseiten-Checker", page_icon="logo.png", layout="centered")
 
-# CSS für Card, Button etc.
+# --- Style nur fürs Card-Design und Button ---
 st.markdown("""
     <style>
     body, [data-testid="stAppViewContainer"], html {
@@ -22,7 +22,7 @@ st.markdown("""
         display: flex;
         flex-direction: column;
         align-items: center;
-        margin: 48px auto 32px auto;
+        margin: 64px auto 48px auto;
     }
     .header-flex {
         display: flex;
@@ -78,19 +78,18 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# -- ALLES im Container --
+# --------- ALLES IM CONTAINER! ---------
 with st.container():
     st.markdown('<div class="center-card">', unsafe_allow_html=True)
     st.markdown('<div class="header-flex">', unsafe_allow_html=True)
     st.image("logo.png", width=48)
     st.markdown('<h1>Webseiten-Checker</h1></div>', unsafe_allow_html=True)
     st.markdown('<div class="app-subtitle">Finde Webseiten, die Optimierung brauchen!</div>', unsafe_allow_html=True)
-
     keyword = st.text_input("Keyword eingeben", "")
     go = st.button("Scan starten")
-    st.markdown('</div>', unsafe_allow_html=True)  # Center-Card zu
+    st.markdown('</div>', unsafe_allow_html=True)  # Schließt .center-card
 
-# -------------- FUNKTIONEN & LOGIK --------------
+# --- Ergebnisse nach Card anzeigen (NACH Container!) ---
 SERPAPI_KEY = "833c2605f2e281d47aec475bec3ad361c317c722bf2104726a0ef6881dc2642c"
 GOOGLE_API_KEY = "AIzaSyDbjJJZnl2kcZhWvz7V-80bQhgEodm6GZU"
 
@@ -165,7 +164,6 @@ def highlight_score(val):
     else:
         return 'background-color: #66ff66; color: black;'
 
-# Ergebnisse nach Card anzeigen
 if go:
     if not keyword:
         st.warning("Bitte gib ein Keyword ein.")
