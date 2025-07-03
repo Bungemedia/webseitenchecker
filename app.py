@@ -5,6 +5,7 @@ from bs4 import BeautifulSoup
 import base64
 import json
 import os
+import concurrent.futures
 
 st.set_page_config(page_title="Webseiten-Checker", page_icon="logo.png", layout="centered")
 
@@ -134,7 +135,10 @@ def categorize_score(score):
         return "90-100 (gut)"
 
 def highlight_score(val):
-    val = float(val)
+    try:
+        val = float(val)
+    except:
+        return ''
     if val <= 49:
         return 'background-color: #ff4d4d; color: white;'
     elif val <= 69:
@@ -146,7 +150,6 @@ def highlight_score(val):
 
 # --- NEU: JSON-SEO-Report einlesen und Felder extrahieren ---
 def load_seo_json(url):
-    # Aus URL den Dateinamen machen, z.B. example.com => report_example.com.json
     domain = url.replace("https://", "").replace("http://", "").split("/")[0]
     filename = f"report_{domain}.json"
     if os.path.isfile(filename):
@@ -175,47 +178,128 @@ def extract_seo_data(seo_json):
         "Hinweise": ", ".join([h["text"] for h in seo_json.get("hints", [])][:3])
     }
 
-def check_pagespeed(results, progress_bar):
+# -- NEU: HTTPS-Check
+def check_https(url):
+    return "Ja" if url.startswith("https://") else "Nein"
+
+# -- NEU: robots.txt & sitemap.xml vorhanden?
+def check_robots_sitemap(url):
+    base = url.split("//")[-1].split("/")[0]
+    robots = False
+    sitemap = False
+    try:
+        r = requests.get(f"https://{base}/robots.txt", timeout=3)
+        robots = r.status_code == 200
+    except Exception:
+        pass
+    try:
+        r = requests.get(f"https://{base}/sitemap.xml", timeout=3)
+        sitemap = r.status_code == 200
+    except Exception:
+        pass
+    return ("Ja" if robots else "Nein"), ("Ja" if sitemap else "Nein")
+
+# -- NEU: Bild-Alt-Texte prüfen
+def check_image_alts(url):
+    try:
+        r = requests.get(url, timeout=5)
+        soup = BeautifulSoup(r.text, "html.parser")
+        imgs = soup.find_all("img")
+        if not imgs:
+            return "-"
+        alt_missing = [img for img in imgs if not img.get("alt")]
+        return f"{len(alt_missing)} fehlen" if alt_missing else "Alle ok"
+    except Exception:
+        return "-"
+
+# -- NEU: Broken Links prüfen
+def check_broken_links(url):
+    try:
+        r = requests.get(url, timeout=5)
+        soup = BeautifulSoup(r.text, "html.parser")
+        links = [a.get("href") for a in soup.find_all("a", href=True)]
+        broken = 0
+        checked = 0
+        for link in links:
+            if not link.startswith("http"):
+                continue
+            checked += 1
+            try:
+                resp = requests.head(link, timeout=3, allow_redirects=True)
+                if resp.status_code >= 400:
+                    broken += 1
+            except Exception:
+                broken += 1
+        return f"{broken} von {checked}"
+    except Exception:
+        return "-"
+
+# -- NEU: Statuscode
+def get_statuscode(url):
+    try:
+        r = requests.get(url, timeout=5)
+        return r.status_code
+    except Exception:
+        return "-"
+
+# -- NEU: Parallele Analyse aller Checks pro Domain --
+def batch_check_pagespeed(results, progress_bar):
     headers = {"Content-Type": "application/json"}
     pagespeed_results = []
-    total = len(results)
-    for idx, (url, position) in enumerate(results):
-        api_url = f"https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url={url}&strategy=mobile&key={GOOGLE_API_KEY}"
+
+    def single_analysis(args):
+        url, position = args
+        score = "-"
+        category = "-"
         try:
+            api_url = f"https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url={url}&strategy=mobile&key={GOOGLE_API_KEY}"
             response = requests.get(api_url, headers=headers)
             if response.status_code == 200:
                 data = response.json()
                 score = data['lighthouseResult']['categories']['performance']['score'] * 100
                 score = round(score, 1)
-                # SEO-Infos aus JSON einlesen
-                seo_json = load_seo_json(url)
-                seo_data = extract_seo_data(seo_json)
-                title, meta_desc = seo_scrape(url)
-                impressum, datenschutz = check_legal(url)
                 category = categorize_score(score)
-                pagespeed_results.append({
-                    "Position": position,
-                    "Domain": url,
-                    "Score": f"{score:.1f}",
-                    "Kategorie": category,
-                    "Title": title,
-                    "Meta Description": meta_desc,
-                    "Impressum": impressum,
-                    "Datenschutz": datenschutz,
-                    # Die neuen Felder:
-                    "SEO-Score": seo_data["SEO-Score"],
-                    "Ladezeit": seo_data["Ladezeit"],
-                    "Wörter": seo_data["Wörter"],
-                    "Meta-Fehler": seo_data["Meta-Fehler"],
-                    "Hinweise": seo_data["Hinweise"],
-                    "Nachricht": f"Mobile Pagespeed Score: {score:.1f}, Optimierung empfohlen!"
-                })
-            else:
-                st.warning(f"Fehler bei {url}: Statuscode {response.status_code}")
-        except Exception as e:
-            st.warning(f"Fehler bei {url}: {e}")
-        progress_percent = int(((idx + 1) / total) * 100)
-        progress_bar.progress(progress_percent, text=f"Prüfe Seiten… ({progress_percent}%)")
+        except Exception:
+            pass
+        seo_json = load_seo_json(url)
+        seo_data = extract_seo_data(seo_json)
+        title, meta_desc = seo_scrape(url)
+        impressum, datenschutz = check_legal(url)
+        https = check_https(url)
+        robots, sitemap = check_robots_sitemap(url)
+        image_alts = check_image_alts(url)
+        broken_links = check_broken_links(url)
+        statuscode = get_statuscode(url)
+        return {
+            "Position": position,
+            "Domain": url,
+            "Score": f"{score:.1f}" if score != "-" else "-",
+            "Kategorie": category,
+            "Title": title,
+            "Meta Description": meta_desc,
+            "Impressum": impressum,
+            "Datenschutz": datenschutz,
+            "SEO-Score": seo_data["SEO-Score"],
+            "Ladezeit": seo_data["Ladezeit"],
+            "Wörter": seo_data["Wörter"],
+            "Meta-Fehler": seo_data["Meta-Fehler"],
+            "Hinweise": seo_data["Hinweise"],
+            "HTTPS": https,
+            "robots.txt": robots,
+            "sitemap.xml": sitemap,
+            "Bild-Alt": image_alts,
+            "Broken Links": broken_links,
+            "Statuscode": statuscode,
+            "Nachricht": f"Mobile Pagespeed Score: {score:.1f}, Optimierung empfohlen!" if score != "-" else "-"
+        }
+
+    total = len(results)
+    with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
+        all_results = list(executor.map(single_analysis, results))
+        for idx, result in enumerate(all_results):
+            progress_percent = int(((idx + 1) / total) * 100)
+            progress_bar.progress(progress_percent, text=f"Prüfe Seiten… ({progress_percent}%)")
+            pagespeed_results.append(result)
     progress_bar.empty()
     return pagespeed_results
 
@@ -229,7 +313,7 @@ if go:
             results = run_search(keyword, num_results)
             if results:
                 progress_bar = st.progress(0, text="Seiten werden geprüft…")
-                pagespeed_results = check_pagespeed(results, progress_bar)
+                pagespeed_results = batch_check_pagespeed(results, progress_bar)
                 if pagespeed_results:
                     df = pd.DataFrame(pagespeed_results).sort_values(by="Position")
                     df = df.reset_index(drop=True)
