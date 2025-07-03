@@ -3,18 +3,20 @@ import pandas as pd
 import requests
 from bs4 import BeautifulSoup
 import base64
+import json
+import os
 
 st.set_page_config(page_title="Webseiten-Checker", page_icon="logo.png", layout="centered")
 
-# --- LOGO einlesen (aus Datei in Base64 kodieren) ---
+# --- LOGO einlesen ---
 def get_base64_logo(file_path):
     with open(file_path, "rb") as image_file:
         encoded = base64.b64encode(image_file.read()).decode()
     return encoded
 
-logo_base64 = get_base64_logo("logo.png")  # Datei muss im selben Ordner liegen!
+logo_base64 = get_base64_logo("logo.png")
 
-# --- CLEAN DARK THEME & HEADLINE ZENTRIERUNG ---
+# --- Dark Theme & zentrierte Headline ---
 st.markdown("""
     <style>
     html, body, [data-testid="stAppViewContainer"] {
@@ -45,7 +47,6 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# --- LOGO & HEADLINE ---
 st.markdown(
     f"""
     <div style='text-align:center; margin-bottom:0.7em;'>
@@ -58,7 +59,7 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-# --- Weitere Eingabefelder ---
+# --- Eingabefelder ---
 col1, col2 = st.columns([2, 1])
 with col1:
     keyword = st.text_input("Keyword eingeben", "")
@@ -67,15 +68,12 @@ with col2:
 
 go = st.button("Scan starten")
 
-# --- Session-Statistik ---
 if "checks_done" not in st.session_state:
     st.session_state["checks_done"] = 0
 
-# --- API-Keys ---
 SERPAPI_KEY = "833c2605f2e281d47aec475bec3ad361c317c722bf2104726a0ef6881dc2642c"
 GOOGLE_API_KEY = "AIzaSyDbjJJZnl2kcZhWvz7V-80bQhgEodm6GZU"
 
-# --- Funktionen ---
 def run_search(keyword, num_results):
     params = {
         "engine": "google",
@@ -98,7 +96,6 @@ def run_search(keyword, num_results):
         return []
 
 def seo_scrape(url):
-    """SEO-Checks: Titel und Meta-Description scrapen"""
     try:
         r = requests.get(url, timeout=4)
         soup = BeautifulSoup(r.text, "html.parser")
@@ -110,7 +107,6 @@ def seo_scrape(url):
         return "-", "-"
 
 def check_legal(url):
-    """Checkt, ob Impressum/Datenschutz vorhanden ist"""
     url = url.rstrip("/")
     impressum = False
     datenschutz = False
@@ -125,43 +121,6 @@ def check_legal(url):
     except Exception:
         pass
     return ("Ja" if impressum else "Nein"), ("Ja" if datenschutz else "Nein")
-
-def check_pagespeed(results, progress_bar):
-    headers = {"Content-Type": "application/json"}
-    pagespeed_results = []
-    total = len(results)
-    for idx, (url, position) in enumerate(results):
-        api_url = f"https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url={url}&strategy=mobile&key={GOOGLE_API_KEY}"
-        try:
-            response = requests.get(api_url, headers=headers)
-            if response.status_code == 200:
-                data = response.json()
-                score = data['lighthouseResult']['categories']['performance']['score'] * 100
-                score = round(score, 1)
-                if score >= 90:
-                    continue
-                title, meta_desc = seo_scrape(url)
-                impressum, datenschutz = check_legal(url)
-                category = categorize_score(score)
-                pagespeed_results.append({
-                    "Position": position,
-                    "Domain": url,
-                    "Score": f"{score:.1f}",
-                    "Kategorie": category,
-                    "Title": title,
-                    "Meta Description": meta_desc,
-                    "Impressum": impressum,
-                    "Datenschutz": datenschutz,
-                    "Nachricht": f"Mobile Pagespeed Score: {score:.1f}, Optimierung empfohlen!"
-                })
-            else:
-                st.warning(f"Fehler bei {url}: Statuscode {response.status_code}")
-        except Exception as e:
-            st.warning(f"Fehler bei {url}: {e}")
-        progress_percent = int(((idx + 1) / total) * 100)
-        progress_bar.progress(progress_percent, text=f"Prüfe Seiten… ({progress_percent}%)")
-    progress_bar.empty()
-    return pagespeed_results
 
 def categorize_score(score):
     score = float(score)
@@ -184,6 +143,81 @@ def highlight_score(val):
         return 'background-color: #ffff66; color: black;'
     else:
         return 'background-color: #66ff66; color: black;'
+
+# --- NEU: JSON-SEO-Report einlesen und Felder extrahieren ---
+def load_seo_json(url):
+    # Aus URL den Dateinamen machen, z.B. example.com => report_example.com.json
+    domain = url.replace("https://", "").replace("http://", "").split("/")[0]
+    filename = f"report_{domain}.json"
+    if os.path.isfile(filename):
+        try:
+            with open(filename, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception:
+            return None
+    else:
+        return None
+
+def extract_seo_data(seo_json):
+    if seo_json is None:
+        return {
+            "SEO-Score": "-",
+            "Ladezeit": "-",
+            "Wörter": "-",
+            "Meta-Fehler": "-",
+            "Hinweise": "-"
+        }
+    return {
+        "SEO-Score": seo_json.get("score", "-"),
+        "Ladezeit": seo_json.get("quickfacts", {}).get("loadtime", "-"),
+        "Wörter": seo_json.get("quickfacts", {}).get("words", "-"),
+        "Meta-Fehler": "Ja" if any("meta description" in h["text"].lower() for h in seo_json.get("hints", [])) else "Nein",
+        "Hinweise": ", ".join([h["text"] for h in seo_json.get("hints", [])][:3])
+    }
+
+def check_pagespeed(results, progress_bar):
+    headers = {"Content-Type": "application/json"}
+    pagespeed_results = []
+    total = len(results)
+    for idx, (url, position) in enumerate(results):
+        api_url = f"https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url={url}&strategy=mobile&key={GOOGLE_API_KEY}"
+        try:
+            response = requests.get(api_url, headers=headers)
+            if response.status_code == 200:
+                data = response.json()
+                score = data['lighthouseResult']['categories']['performance']['score'] * 100
+                score = round(score, 1)
+                # SEO-Infos aus JSON einlesen
+                seo_json = load_seo_json(url)
+                seo_data = extract_seo_data(seo_json)
+                title, meta_desc = seo_scrape(url)
+                impressum, datenschutz = check_legal(url)
+                category = categorize_score(score)
+                pagespeed_results.append({
+                    "Position": position,
+                    "Domain": url,
+                    "Score": f"{score:.1f}",
+                    "Kategorie": category,
+                    "Title": title,
+                    "Meta Description": meta_desc,
+                    "Impressum": impressum,
+                    "Datenschutz": datenschutz,
+                    # Die neuen Felder:
+                    "SEO-Score": seo_data["SEO-Score"],
+                    "Ladezeit": seo_data["Ladezeit"],
+                    "Wörter": seo_data["Wörter"],
+                    "Meta-Fehler": seo_data["Meta-Fehler"],
+                    "Hinweise": seo_data["Hinweise"],
+                    "Nachricht": f"Mobile Pagespeed Score: {score:.1f}, Optimierung empfohlen!"
+                })
+            else:
+                st.warning(f"Fehler bei {url}: Statuscode {response.status_code}")
+        except Exception as e:
+            st.warning(f"Fehler bei {url}: {e}")
+        progress_percent = int(((idx + 1) / total) * 100)
+        progress_bar.progress(progress_percent, text=f"Prüfe Seiten… ({progress_percent}%)")
+    progress_bar.empty()
+    return pagespeed_results
 
 # --- Ergebnisse anzeigen ---
 if go:
