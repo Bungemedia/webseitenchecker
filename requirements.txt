@@ -1,5 +1,7 @@
-streamlit
-pandas
-requests
-serpapi
-beautifulsoup4
+import streamlit as st
+import pandas as pd
+import requests
+from bs4 import BeautifulSoup
+import base64
+import json
+import os
