@@ -106,8 +106,11 @@ def seobility_api_check(url):
     try:
         response = requests.get(api_url)
         if response.status_code == 200:
-            time.sleep(1)  # kleine Pause zur Sicherheit
-            return response.json(), True
+            data = response.json()
+            if not data or "score" not in data or "quickfacts" not in data or "loadtime" not in data.get("quickfacts", {}):
+                st.warning(f"Seobility: Keine verwertbaren Daten für {url}. Prüfe ob die Domain/URL geeignet ist.")
+                return None, True  # True, damit ein Scan gezählt wird
+            return data, True
         else:
             st.warning(f"Seobility API Fehler ({url}): Status {response.status_code}")
             return None, False
