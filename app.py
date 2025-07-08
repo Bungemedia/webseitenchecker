@@ -1,11 +1,9 @@
 import streamlit as st
 import pandas as pd
 import requests
-from bs4 import BeautifulSoup
 import base64
-import json
-import os
 import concurrent.futures
+import time
 
 st.set_page_config(page_title="Webseiten-Checker", page_icon="logo.png", layout="centered")
 
@@ -72,8 +70,16 @@ go = st.button("Scan starten")
 if "checks_done" not in st.session_state:
     st.session_state["checks_done"] = 0
 
+# API-Keys
 SERPAPI_KEY = "833c2605f2e281d47aec475bec3ad361c317c722bf2104726a0ef6881dc2642c"
 GOOGLE_API_KEY = "AIzaSyDbjJJZnl2kcZhWvz7V-80bQhgEodm6GZU"
+SEOBILITY_API_KEY = "f1325c894b5664268ab10e9a185c28f8e6d63145"
+
+# API Limit für Seobility (z. B. 200 pro Tag im Trial oder 50k/Monat)
+API_LIMIT = 100  # Setze auf deinen Wunschwert, z.B. 100 pro Tag fürs Testing
+
+if "api_scans_today" not in st.session_state:
+    st.session_state["api_scans_today"] = 0
 
 def run_search(keyword, num_results):
     params = {
@@ -96,35 +102,46 @@ def run_search(keyword, num_results):
         st.error(f"Fehler bei der Google-Suche: {e}")
         return []
 
-def seo_scrape(url):
+def seobility_api_check(url):
+    if st.session_state["api_scans_today"] >= API_LIMIT:
+        st.warning("API-Limit erreicht – heute keine weiteren Scans möglich!")
+        return None
+    api_url = f"https://api.seobility.net/seo_check?apikey={SEOBILITY_API_KEY}&url={url}"
     try:
-        r = requests.get(url, timeout=4)
-        soup = BeautifulSoup(r.text, "html.parser")
-        title = soup.title.string.strip() if soup.title and soup.title.string else "-"
-        meta = soup.find("meta", attrs={"name": "description"})
-        meta_desc = meta["content"].strip() if meta and "content" in meta.attrs else "-"
-        return title, meta_desc
-    except Exception:
-        return "-", "-"
+        response = requests.get(api_url)
+        if response.status_code == 200:
+            st.session_state["api_scans_today"] += 1
+            time.sleep(1)  # kleine Pause zur Sicherheit
+            return response.json()
+        else:
+            st.warning(f"Seobility API Fehler ({url}): Status {response.status_code}")
+            return None
+    except Exception as e:
+        st.warning(f"Seobility API Fehler ({url}): {e}")
+        return None
 
-def check_legal(url):
-    url = url.rstrip("/")
-    impressum = False
-    datenschutz = False
-    try:
-        r = requests.get(url + "/impressum", timeout=3)
-        impressum = r.status_code == 200
-    except Exception:
-        pass
-    try:
-        r = requests.get(url + "/datenschutz", timeout=3)
-        datenschutz = r.status_code == 200
-    except Exception:
-        pass
-    return ("Ja" if impressum else "Nein"), ("Ja" if datenschutz else "Nein")
+def extract_seo_data(seo_json):
+    if seo_json is None:
+        return {
+            "SEO-Score": "-",
+            "Ladezeit": "-",
+            "Wörter": "-",
+            "Meta-Fehler": "-",
+            "Hinweise": "-"
+        }
+    return {
+        "SEO-Score": seo_json.get("score", "-"),
+        "Ladezeit": seo_json.get("quickfacts", {}).get("loadtime", "-"),
+        "Wörter": seo_json.get("quickfacts", {}).get("words", "-"),
+        "Meta-Fehler": "Ja" if any("meta description" in h["text"].lower() for h in seo_json.get("hints", [])) else "Nein",
+        "Hinweise": ", ".join([h["text"] for h in seo_json.get("hints", [])][:3])
+    }
 
 def categorize_score(score):
-    score = float(score)
+    try:
+        score = float(score)
+    except:
+        return "-"
     if score <= 49:
         return "0-49 (schlecht)"
     elif score <= 69:
@@ -148,107 +165,13 @@ def highlight_score(val):
     else:
         return 'background-color: #66ff66; color: black;'
 
-# --- NEU: JSON-SEO-Report einlesen und Felder extrahieren ---
-def load_seo_json(url):
-    domain = url.replace("https://", "").replace("http://", "").split("/")[0]
-    filename = f"report_{domain}.json"
-    if os.path.isfile(filename):
-        try:
-            with open(filename, "r", encoding="utf-8") as f:
-                return json.load(f)
-        except Exception:
-            return None
-    else:
-        return None
-
-def extract_seo_data(seo_json):
-    if seo_json is None:
-        return {
-            "SEO-Score": "-",
-            "Ladezeit": "-",
-            "Wörter": "-",
-            "Meta-Fehler": "-",
-            "Hinweise": "-"
-        }
-    return {
-        "SEO-Score": seo_json.get("score", "-"),
-        "Ladezeit": seo_json.get("quickfacts", {}).get("loadtime", "-"),
-        "Wörter": seo_json.get("quickfacts", {}).get("words", "-"),
-        "Meta-Fehler": "Ja" if any("meta description" in h["text"].lower() for h in seo_json.get("hints", [])) else "Nein",
-        "Hinweise": ", ".join([h["text"] for h in seo_json.get("hints", [])][:3])
-    }
-
-# -- NEU: HTTPS-Check
-def check_https(url):
-    return "Ja" if url.startswith("https://") else "Nein"
-
-# -- NEU: robots.txt & sitemap.xml vorhanden?
-def check_robots_sitemap(url):
-    base = url.split("//")[-1].split("/")[0]
-    robots = False
-    sitemap = False
-    try:
-        r = requests.get(f"https://{base}/robots.txt", timeout=3)
-        robots = r.status_code == 200
-    except Exception:
-        pass
-    try:
-        r = requests.get(f"https://{base}/sitemap.xml", timeout=3)
-        sitemap = r.status_code == 200
-    except Exception:
-        pass
-    return ("Ja" if robots else "Nein"), ("Ja" if sitemap else "Nein")
-
-# -- NEU: Bild-Alt-Texte prüfen
-def check_image_alts(url):
-    try:
-        r = requests.get(url, timeout=5)
-        soup = BeautifulSoup(r.text, "html.parser")
-        imgs = soup.find_all("img")
-        if not imgs:
-            return "-"
-        alt_missing = [img for img in imgs if not img.get("alt")]
-        return f"{len(alt_missing)} fehlen" if alt_missing else "Alle ok"
-    except Exception:
-        return "-"
-
-# -- NEU: Broken Links prüfen
-def check_broken_links(url):
-    try:
-        r = requests.get(url, timeout=5)
-        soup = BeautifulSoup(r.text, "html.parser")
-        links = [a.get("href") for a in soup.find_all("a", href=True)]
-        broken = 0
-        checked = 0
-        for link in links:
-            if not link.startswith("http"):
-                continue
-            checked += 1
-            try:
-                resp = requests.head(link, timeout=3, allow_redirects=True)
-                if resp.status_code >= 400:
-                    broken += 1
-            except Exception:
-                broken += 1
-        return f"{broken} von {checked}"
-    except Exception:
-        return "-"
-
-# -- NEU: Statuscode
-def get_statuscode(url):
-    try:
-        r = requests.get(url, timeout=5)
-        return r.status_code
-    except Exception:
-        return "-"
-
-# -- NEU: Parallele Analyse aller Checks pro Domain --
-def batch_check_pagespeed(results, progress_bar):
+def check_pagespeed_and_seobility(results, progress_bar):
     headers = {"Content-Type": "application/json"}
-    pagespeed_results = []
+    all_results = []
 
-    def single_analysis(args):
+    def analyze_url(args):
         url, position = args
+        # Google PageSpeed
         score = "-"
         category = "-"
         try:
@@ -261,47 +184,31 @@ def batch_check_pagespeed(results, progress_bar):
                 category = categorize_score(score)
         except Exception:
             pass
-        seo_json = load_seo_json(url)
+        # Seobility API
+        seo_json = seobility_api_check(url)
         seo_data = extract_seo_data(seo_json)
-        title, meta_desc = seo_scrape(url)
-        impressum, datenschutz = check_legal(url)
-        https = check_https(url)
-        robots, sitemap = check_robots_sitemap(url)
-        image_alts = check_image_alts(url)
-        broken_links = check_broken_links(url)
-        statuscode = get_statuscode(url)
         return {
             "Position": position,
             "Domain": url,
             "Score": f"{score:.1f}" if score != "-" else "-",
             "Kategorie": category,
-            "Title": title,
-            "Meta Description": meta_desc,
-            "Impressum": impressum,
-            "Datenschutz": datenschutz,
             "SEO-Score": seo_data["SEO-Score"],
             "Ladezeit": seo_data["Ladezeit"],
             "Wörter": seo_data["Wörter"],
             "Meta-Fehler": seo_data["Meta-Fehler"],
             "Hinweise": seo_data["Hinweise"],
-            "HTTPS": https,
-            "robots.txt": robots,
-            "sitemap.xml": sitemap,
-            "Bild-Alt": image_alts,
-            "Broken Links": broken_links,
-            "Statuscode": statuscode,
             "Nachricht": f"Mobile Pagespeed Score: {score:.1f}, Optimierung empfohlen!" if score != "-" else "-"
         }
 
     total = len(results)
-    with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
-        all_results = list(executor.map(single_analysis, results))
-        for idx, result in enumerate(all_results):
+    with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
+        batch = list(executor.map(analyze_url, results))
+        for idx, res in enumerate(batch):
             progress_percent = int(((idx + 1) / total) * 100)
             progress_bar.progress(progress_percent, text=f"Prüfe Seiten… ({progress_percent}%)")
-            pagespeed_results.append(result)
+            all_results.append(res)
     progress_bar.empty()
-    return pagespeed_results
+    return all_results
 
 # --- Ergebnisse anzeigen ---
 if go:
@@ -312,20 +219,24 @@ if go:
         with st.spinner("Suche läuft..."):
             results = run_search(keyword, num_results)
             if results:
-                progress_bar = st.progress(0, text="Seiten werden geprüft…")
-                pagespeed_results = batch_check_pagespeed(results, progress_bar)
-                if pagespeed_results:
-                    df = pd.DataFrame(pagespeed_results).sort_values(by="Position")
-                    df = df.reset_index(drop=True)
-                    styled_df = df.style.applymap(highlight_score, subset=["Score"])
-                    st.subheader("🔎 Detaillierte Ergebnisse")
-                    st.dataframe(styled_df, hide_index=True)
-                    st.success("Analyse abgeschlossen!")
+                if len(results) > (API_LIMIT - st.session_state["api_scans_today"]):
+                    st.warning(f"Zu viele URLs für dein heutiges API-Limit ({API_LIMIT}). Bitte weniger Domains auswählen.")
                 else:
-                    st.info("Keine Webseiten mit ausreichender Bewertung gefunden.")
+                    progress_bar = st.progress(0, text="Seiten werden geprüft…")
+                    all_results = check_pagespeed_and_seobility(results, progress_bar)
+                    if all_results:
+                        df = pd.DataFrame(all_results).sort_values(by="Position")
+                        df = df.reset_index(drop=True)
+                        styled_df = df.style.applymap(highlight_score, subset=["Score"])
+                        st.subheader("🔎 Detaillierte Ergebnisse")
+                        st.dataframe(styled_df, hide_index=True)
+                        st.success("Analyse abgeschlossen!")
+                    else:
+                        st.info("Keine Webseiten mit ausreichender Bewertung gefunden.")
             else:
                 st.info("Keine Ergebnisse für das Keyword gefunden.")
         st.info(f"Checks in dieser Session: {st.session_state['checks_done']}")
+        st.info(f"Heute bereits genutzte API-Scans: {st.session_state['api_scans_today']} / {API_LIMIT}")
 
 # --- INFO-Text, Footer, Kontaktbereich ---
 st.markdown("---")
