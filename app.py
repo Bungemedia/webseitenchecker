@@ -70,13 +70,12 @@ go = st.button("Scan starten")
 if "checks_done" not in st.session_state:
     st.session_state["checks_done"] = 0
 
-# API-Keys
 SERPAPI_KEY = "833c2605f2e281d47aec475bec3ad361c317c722bf2104726a0ef6881dc2642c"
 GOOGLE_API_KEY = "AIzaSyDbjJJZnl2kcZhWvz7V-80bQhgEodm6GZU"
 SEOBILITY_API_KEY = "f1325c894b5664268ab10e9a185c28f8e6d63145"
 
-# API Limit für Seobility (z. B. 200 pro Tag im Trial oder 50k/Monat)
-API_LIMIT = 100  # Setze auf deinen Wunschwert, z.B. 100 pro Tag fürs Testing
+# API-Limit pro Tag
+API_LIMIT = 100  # Passe dies nach deinem Tarif an!
 
 if "api_scans_today" not in st.session_state:
     st.session_state["api_scans_today"] = 0
@@ -103,22 +102,18 @@ def run_search(keyword, num_results):
         return []
 
 def seobility_api_check(url):
-    if st.session_state["api_scans_today"] >= API_LIMIT:
-        st.warning("API-Limit erreicht – heute keine weiteren Scans möglich!")
-        return None
     api_url = f"https://api.seobility.net/seo_check?apikey={SEOBILITY_API_KEY}&url={url}"
     try:
         response = requests.get(api_url)
         if response.status_code == 200:
-            st.session_state["api_scans_today"] += 1
             time.sleep(1)  # kleine Pause zur Sicherheit
-            return response.json()
+            return response.json(), True
         else:
             st.warning(f"Seobility API Fehler ({url}): Status {response.status_code}")
-            return None
+            return None, False
     except Exception as e:
         st.warning(f"Seobility API Fehler ({url}): {e}")
-        return None
+        return None, False
 
 def extract_seo_data(seo_json):
     if seo_json is None:
@@ -185,7 +180,7 @@ def check_pagespeed_and_seobility(results, progress_bar):
         except Exception:
             pass
         # Seobility API
-        seo_json = seobility_api_check(url)
+        seo_json, api_used = seobility_api_check(url)
         seo_data = extract_seo_data(seo_json)
         return {
             "Position": position,
@@ -197,7 +192,8 @@ def check_pagespeed_and_seobility(results, progress_bar):
             "Wörter": seo_data["Wörter"],
             "Meta-Fehler": seo_data["Meta-Fehler"],
             "Hinweise": seo_data["Hinweise"],
-            "Nachricht": f"Mobile Pagespeed Score: {score:.1f}, Optimierung empfohlen!" if score != "-" else "-"
+            "Nachricht": f"Mobile Pagespeed Score: {score:.1f}, Optimierung empfohlen!" if score != "-" else "-",
+            "api_used": api_used
         }
 
     total = len(results)
@@ -208,6 +204,15 @@ def check_pagespeed_and_seobility(results, progress_bar):
             progress_bar.progress(progress_percent, text=f"Prüfe Seiten… ({progress_percent}%)")
             all_results.append(res)
     progress_bar.empty()
+
+    # API-Counter nachträglich aktualisieren (nur in Hauptprozess)
+    api_calls_now = sum(1 for r in all_results if r.get("api_used"))
+    st.session_state["api_scans_today"] += api_calls_now
+
+    # Spalte "api_used" entfernen
+    for r in all_results:
+        r.pop("api_used", None)
+
     return all_results
 
 # --- Ergebnisse anzeigen ---
@@ -218,8 +223,9 @@ if go:
         st.session_state["checks_done"] += 1
         with st.spinner("Suche läuft..."):
             results = run_search(keyword, num_results)
+            scans_left = API_LIMIT - st.session_state["api_scans_today"]
             if results:
-                if len(results) > (API_LIMIT - st.session_state["api_scans_today"]):
+                if len(results) > scans_left:
                     st.warning(f"Zu viele URLs für dein heutiges API-Limit ({API_LIMIT}). Bitte weniger Domains auswählen.")
                 else:
                     progress_bar = st.progress(0, text="Seiten werden geprüft…")
