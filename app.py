@@ -119,37 +119,33 @@ def extract_seo_data(seo_json):
     if seo_json is None:
         return {
             "SEO-Score": "-",
-            "Ladezeit": "-",
-            "Wörter": "-",
-            "Meta-Fehler": "-",
-            "Hinweise": "-"
+            "Ladezeit": "-"
         }
     return {
         "SEO-Score": seo_json.get("score", "-"),
-        "Ladezeit": seo_json.get("quickfacts", {}).get("loadtime", "-"),
-        "Wörter": seo_json.get("quickfacts", {}).get("words", "-"),
-        "Meta-Fehler": "Ja" if any("meta description" in h["text"].lower() for h in seo_json.get("hints", [])) else "Nein",
-        "Hinweise": ", ".join([h["text"] for h in seo_json.get("hints", [])][:3])
+        "Ladezeit": seo_json.get("quickfacts", {}).get("loadtime", "-")
     }
 
-def categorize_score(score):
+def get_pagespeed_score(url):
+    headers = {"Content-Type": "application/json"}
     try:
-        score = float(score)
-    except:
+        api_url = f"https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url={url}&strategy=mobile&key={GOOGLE_API_KEY}"
+        response = requests.get(api_url, headers=headers)
+        if response.status_code == 200:
+            data = response.json()
+            score = data['lighthouseResult']['categories']['performance']['score'] * 100
+            return round(score, 1)
+        else:
+            return "-"
+    except Exception:
         return "-"
-    if score <= 49:
-        return "0-49 (schlecht)"
-    elif score <= 69:
-        return "50-69 (verbesserungswürdig)"
-    elif score <= 89:
-        return "70-89 (durchschnittlich)"
-    else:
-        return "90-100 (gut)"
 
 def highlight_score(val):
     try:
         val = float(val)
     except:
+        return ''
+    if val == "-":
         return ''
     if val <= 49:
         return 'background-color: #ff4d4d; color: white;'
@@ -160,39 +156,21 @@ def highlight_score(val):
     else:
         return 'background-color: #66ff66; color: black;'
 
-def check_pagespeed_and_seobility(results, progress_bar):
-    headers = {"Content-Type": "application/json"}
+def analyze_domains(results, progress_bar):
     all_results = []
 
     def analyze_url(args):
         url, position = args
-        # Google PageSpeed
-        score = "-"
-        category = "-"
-        try:
-            api_url = f"https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url={url}&strategy=mobile&key={GOOGLE_API_KEY}"
-            response = requests.get(api_url, headers=headers)
-            if response.status_code == 200:
-                data = response.json()
-                score = data['lighthouseResult']['categories']['performance']['score'] * 100
-                score = round(score, 1)
-                category = categorize_score(score)
-        except Exception:
-            pass
-        # Seobility API
+        # Seobility
         seo_json, api_used = seobility_api_check(url)
         seo_data = extract_seo_data(seo_json)
+        # Google PageSpeed
+        pagespeed_score = get_pagespeed_score(url)
         return {
-            "Position": position,
             "Domain": url,
-            "Score": f"{score:.1f}" if score != "-" else "-",
-            "Kategorie": category,
             "SEO-Score": seo_data["SEO-Score"],
-            "Ladezeit": seo_data["Ladezeit"],
-            "Wörter": seo_data["Wörter"],
-            "Meta-Fehler": seo_data["Meta-Fehler"],
-            "Hinweise": seo_data["Hinweise"],
-            "Nachricht": f"Mobile Pagespeed Score: {score:.1f}, Optimierung empfohlen!" if score != "-" else "-",
+            "Ladezeit (s)": seo_data["Ladezeit"],
+            "PageSpeed Score": pagespeed_score,
             "api_used": api_used
         }
 
@@ -229,11 +207,10 @@ if go:
                     st.warning(f"Zu viele URLs für dein heutiges API-Limit ({API_LIMIT}). Bitte weniger Domains auswählen.")
                 else:
                     progress_bar = st.progress(0, text="Seiten werden geprüft…")
-                    all_results = check_pagespeed_and_seobility(results, progress_bar)
+                    all_results = analyze_domains(results, progress_bar)
                     if all_results:
-                        df = pd.DataFrame(all_results).sort_values(by="Position")
-                        df = df.reset_index(drop=True)
-                        styled_df = df.style.applymap(highlight_score, subset=["Score"])
+                        df = pd.DataFrame(all_results)
+                        styled_df = df.style.applymap(highlight_score, subset=["SEO-Score", "PageSpeed Score"])
                         st.subheader("🔎 Detaillierte Ergebnisse")
                         st.dataframe(styled_df, hide_index=True)
                         st.success("Analyse abgeschlossen!")
