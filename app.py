@@ -105,6 +105,9 @@ def seobility_api_check(url):
     api_url = f"https://api.seobility.net/seo_check?apikey={SEOBILITY_API_KEY}&url={url}"
     try:
         response = requests.get(api_url)
+        # Logge die komplette API-Antwort im Streamlit-Expander für diese URL:
+        with st.expander(f"Seobility API Rohdaten für {url}"):
+            st.code(response.text, language="json")
         if response.status_code == 200:
             data = response.json()
             if not data or "score" not in data or "quickfacts" not in data or "loadtime" not in data.get("quickfacts", {}):
